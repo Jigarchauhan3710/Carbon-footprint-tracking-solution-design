@@ -276,7 +276,7 @@ assert('buildGeoChart called in callback',        html.indexOf('buildGeoChart') 
 assert('PieChart draw present',                   html.indexOf('PieChart') > -1);
 assert('ColumnChart draw present',                html.indexOf('ColumnChart') > -1);
 assert('Bar chart draw present',                  html.indexOf('charts.Bar') > -1);
-assert('try/catch around chart draw',             html.indexOf("warn('[App] Pie chart draw error") > -1);
+assert('try/catch around chart draw',             html.indexOf('degraded gracefully') > -1);
 
 /* ══════════════════════════════════════════════
    > 5. GeoChart — India State Data
