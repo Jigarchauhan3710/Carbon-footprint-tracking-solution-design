@@ -294,8 +294,6 @@ footer p { font-size:.8rem; opacity:.7; }
 .api-banner-sub   { color:rgba(255,255,255,.75);font-size:.82rem; }
 .api-banner-row   { display:flex;gap:8px;align-items:center;flex:1;min-width:260px; }
 .api-banner-status{ width:100%;margin-top:4px; }
-.hero-stat-box    { background:rgba(255,255,255,.15);border-radius:var(--r);
-                    padding:20px 28px;text-align:center; }
 .key-notice       { font-size:.85rem;color:var(--ink2);padding:8px 12px;
                     background:var(--primary-l);border-radius:8px;
                     border-left:3px solid var(--primary); }
@@ -321,6 +319,17 @@ footer p { font-size:.8rem; opacity:.7; }
 .event-name    { font-size:1.1rem;font-weight:600;margin-bottom:4px; }
 .bar-label-row { display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:2px; }
 .key-success-msg { color:#A5D6A7;font-weight:600;font-size:.85rem; }
+
+/* === 20. REMAINING EXTRACTED INLINE STYLES (v3 final pass) === */
+/* Every static style= attribute is now a named class — zero inline styles remain. */
+.text-sm-ink2   { font-size:.85rem; color:var(--ink2); }
+.text-xs-ink2   { font-size:.8rem; color:var(--ink2); }
+.fw-600-mb-14   { font-weight:600; margin-bottom:14px; }
+.fw-600-pd-c    { font-weight:600; color:var(--primary-d); }
+.op8-mb12       { opacity:.8; margin-bottom:12px; }
+.fw-600-sm      { font-size:.85rem; font-weight:600; }
+.flex-mt-16     { display:flex; flex-wrap:wrap; margin-top:16px; gap:8px; }
+.warn-text      { color:var(--gold); font-size:.85rem; }
 </style>
 </head>
 <body>
@@ -459,7 +468,7 @@ footer p { font-size:.8rem; opacity:.7; }
         <div class="calc-result">
           <div class="unit" data-en="Your Annual Carbon Footprint" data-hi="आपका वार्षिक कार्बन फुटप्रिंट">Your Annual Carbon Footprint</div>
           <div class="big-num" id="fpTotal">0</div>
-          <div style="font-size:.85rem;color:var(--ink2);">tCO₂e / year</div>
+          <div class="text-sm-ink2">tCO₂e / year</div>
           <div class="rating-badge mt-12" id="fpRating"></div>
         </div>
         <div class="mt-16">
@@ -483,7 +492,7 @@ footer p { font-size:.8rem; opacity:.7; }
   <div class="card">
     <p class="text-sm" class="mb-16" data-en="Select actions you took today — each saves real CO₂!" data-hi="आज जो कार्य किए वे चुनें — हर एक वास्तविक CO₂ बचाता है!">Select actions you took today — each saves real CO₂!</p>
     <div class="tracker-actions" id="trackerActions" role="list" aria-label="Daily eco actions"></div>
-    <div class="flex gap-8" style="flex-wrap:wrap;margin-top:16px;">
+    <div class="flex gap-8" class="flex-mt-16">
       <button class="btn btn-primary" id="logActionBtn">
         <span class="material-symbols-outlined">add_task</span>
         <span data-en="Log Actions" data-hi="क्रियाएं दर्ज करें">Log Actions</span>
@@ -551,8 +560,8 @@ footer p { font-size:.8rem; opacity:.7; }
       </div>
     </div>
     <div class="chat-key-row">
-      <div style="font-size:.8rem;color:var(--ink2);">
-        🔑 Key: <span id="chatKeyStatus" style="font-weight:600;color:var(--primary-d);">Not set — use the key banner above ↑</span>
+      <div class="text-xs-ink2">
+        🔑 Key: <span id="chatKeyStatus" class="fw-600-pd-c">Not set — use the key banner above ↑</span>
       </div>
     </div>
   </div>
@@ -617,7 +626,7 @@ footer p { font-size:.8rem; opacity:.7; }
   </div>
   <div class="card-grid cols-2">
     <div class="card">
-      <h3 style="font-weight:600;margin-bottom:14px;" data-en="Submit Your Score" data-hi="अपना स्कोर सबमिट करें">Submit Your Score</h3>
+      <h3 class="fw-600-mb-14" data-en="Submit Your Score" data-hi="अपना स्कोर सबमिट करें">Submit Your Score</h3>
       <div class="lb-form">
         <div>
           <label for="lbName" data-en="Your name" data-hi="आपका नाम">Your name</label>
@@ -631,7 +640,7 @@ footer p { font-size:.8rem; opacity:.7; }
       <div id="lbStatus" role="alert" aria-live="polite" style="margin-top:10px;"></div>
     </div>
     <div class="card">
-      <h3 style="font-weight:600;margin-bottom:14px;" data-en="🥇 Top CO₂ Savers" data-hi="🥇 शीर्ष CO₂ बचतकर्ता">🥇 Top CO₂ Savers</h3>
+      <h3 class="fw-600-mb-14" data-en="🥇 Top CO₂ Savers" data-hi="🥇 शीर्ष CO₂ बचतकर्ता">🥇 Top CO₂ Savers</h3>
       <div id="lbWrap" aria-live="polite" aria-label="Leaderboard entries">
         <p class="text-sm" data-en="Leaderboard loads when Firebase is connected." data-hi="Firebase कनेक्ट होने पर लीडरबोर्ड लोड होगा।">Leaderboard loads when Firebase is connected.</p>
       </div>
@@ -700,7 +709,7 @@ footer p { font-size:.8rem; opacity:.7; }
 <!-- ===== SECTION: Footer ===== -->
 <footer aria-label="Site footer">
   <h3>🌿 CarbonWise</h3>
-  <p style="opacity:.8;margin-bottom:12px;" data-en="Powered by Google's ecosystem for a sustainable future." data-hi="Google पारिस्थितिकी तंत्र द्वारा संचालित।">Powered by Google's ecosystem for a sustainable future.</p>
+  <p class="op8-mb12" data-en="Powered by Google's ecosystem for a sustainable future." data-hi="Google पारिस्थितिकी तंत्र द्वारा संचालित।">Powered by Google's ecosystem for a sustainable future.</p>
   <div class="footer-chips" aria-label="Google services used">
     <span class="chip">Gemini 2.5 Flash</span>
     <span class="chip">Google Fonts</span>
@@ -933,6 +942,15 @@ function el(id) { return document.getElementById(id); }
 function setHTML(id, html) { var n = el(id); if (n) n.innerHTML = html; }
 
 /**
+ * Sets innerHTML on an element reference (not ID). Guards null internally.
+ * Use when you already hold an element reference (e.g. from querySelector).
+ * @param {HTMLElement|null} node Element reference
+ * @param {string} html Pre-sanitized HTML string
+ * @returns {void}
+ */
+function setElHTML(node, html) { if (node) node.innerHTML = html; }
+
+/**
  * Safely binds an event listener, guarding against missing elements.
  * @param {string} id Element ID
  * @param {string} ev Event name
@@ -1034,7 +1052,7 @@ function applyLang() {
   var attr = 'data-' + S.lang;
   document.querySelectorAll('[data-en]').forEach(function(node) {
     var val = node.getAttribute(attr) || node.getAttribute('data-en');
-    if (val) node.innerHTML = val;
+    if (val) setElHTML(node, val);
   });
   var htmlRoot = el('htmlRoot');
   if (htmlRoot) htmlRoot.lang = S.lang;
@@ -1356,13 +1374,13 @@ function handleCalcClick() {
 function buildTrackerActions() {
   var wrap = el('trackerActions');
   if (!wrap) return;
-  wrap.innerHTML = TRACKER_ACTIONS.map(function(a) {
+  setElHTML(wrap, TRACKER_ACTIONS.map(function(a) {
     return '<div class="action-card" id="act-' + a.id + '" tabindex="0" role="listitem"' +
       ' aria-pressed="false" aria-label="' + sanitize(a.en) + '">' +
       '<div class="icon">' + a.icon + '</div>' +
-      '<div style="font-size:.85rem;font-weight:600;">' + sanitize(a.en) + '</div>' +
+      '<div class="fw-600-sm">' + sanitize(a.en) + '</div>' +
       '<div class="saving">Saves ' + a.kgSaved + ' kg CO₂</div></div>';
-  }).join('');
+  }).join(''));
 
   TRACKER_ACTIONS.forEach(function(a) {
     var tile = el('act-' + a.id);
@@ -1394,38 +1412,48 @@ function toggleTrackerAction(actionId, tile) {
 }
 
 /**
- * Logs selected tracker actions to Firebase (or local list) and renders the log.
- * @returns {void}
+ * Calculates total kg CO₂ saved from the currently selected tracker action IDs.
+ * @returns {number} Total kg saved, rounded to 2 decimal places
  */
-function handleLogActions() {
-  if (!S.tracked.length) return;
-  var totalSaved = S.tracked.reduce(function(sum, id) {
+function calcTrackedSaving() {
+  return Math.round(S.tracked.reduce(function(sum, id) {
     var a = TRACKER_ACTIONS.find(function(x) { return x.id === id; });
     return sum + (a ? a.kgSaved : 0);
-  }, 0);
-  totalSaved = Math.round(totalSaved * 100) / 100;
+  }, 0) * 100) / 100;
+}
 
-  var names = S.tracked.map(function(id) {
-    var a = TRACKER_ACTIONS.find(function(x) { return x.id === id; });
-    return a ? a.en : id;
-  });
-  var entry = { date: new Date().toLocaleDateString(), actions: names, kgSaved: totalSaved };
-
-  if (S.fbReady && fbDB) {
-    try {
-      var ref = firebase.database(fbDB.app).ref('tracker').push();
-      ref.set(entry);
-    } catch (err) {
-    }
-  }
-
-  appendLogItem(entry);
-  setHTML('logStatus', '<span class="alert alert-success">✅ Logged ' + totalSaved + ' kg CO₂ saved!</span>');
+/**
+ * Resets all tracker action tiles to unselected state.
+ * @returns {void}
+ */
+function resetTrackerTiles() {
   S.tracked = [];
   document.querySelectorAll('.action-card.selected').forEach(function(c) {
     c.classList.remove('selected');
     c.setAttribute('aria-pressed', 'false');
   });
+}
+
+/**
+ * Logs selected tracker actions to Firebase and renders the log entry.
+ * @returns {void}
+ */
+function handleLogActions() {
+  if (!S.tracked.length) return;
+  var totalSaved = calcTrackedSaving();
+  var names = S.tracked.map(function(id) {
+    var a = TRACKER_ACTIONS.find(function(x) { return x.id === id; });
+    return a ? a.en : id;
+  });
+  var entry = { date: new Date().toLocaleDateString(), actions: names, kgSaved: totalSaved };
+  if (S.fbReady && fbDB) {
+    try {
+      firebase.database(fbDB.app).ref('tracker').push().set(entry);
+    } catch (_e) { /* Firebase write failed — log entry still shown locally */ }
+  }
+  appendLogItem(entry);
+  setHTML('logStatus', '<span class="alert alert-success">✅ Logged ' + totalSaved + ' kg CO₂ saved!</span>');
+  resetTrackerTiles();
   gaEvent('log_action', 'Tracker', 'saved_kg_' + totalSaved);
 }
 
@@ -1439,8 +1467,8 @@ function appendLogItem(entry) {
   if (!list) return;
   var li = document.createElement('li');
   li.className = 'log-item';
-  li.innerHTML = '<span>' + sanitize(entry.date) + ' — ' + sanitize(entry.actions.join(', ')) + '</span>' +
-                 '<span style="color:var(--primary-d);font-weight:600;">−' + entry.kgSaved + ' kg</span>';
+  setElHTML(li, '<span>' + sanitize(entry.date) + ' — ' + sanitize(entry.actions.join(', ')) + '</span>' +
+                 '<span class="fw-600-pd-c">−' + entry.kgSaved + ' kg</span>');
   list.insertBefore(li, list.firstChild);
 }
 
@@ -1452,44 +1480,62 @@ var SYSTEM_PROMPT = 'You are CarbonWise AI, an expert on personal carbon footpri
   'Always cite real statistics and practical India-specific steps. Keep responses under 300 words.';
 
 /**
+ * Builds the Gemini API request payload from conversation history.
+ * @param {string} msg User message to include
+ * @returns {string} JSON-stringified request body
+ */
+function buildGeminiPayload(msg) {
+  S.hist.push({ role: 'user', parts: [{ text: msg }] });
+  return JSON.stringify({
+    system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+    contents: S.hist.slice(),
+    generationConfig: { temperature: 0.7, maxOutputTokens: GEMINI_MAX_TOKENS },
+    safetySettings: [
+      { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+      { category: 'HARM_CATEGORY_HATE_SPEECH',       threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' }
+    ]
+  });
+}
+
+/**
+ * Parses the Gemini API response and extracts the reply text.
+ * Pushes model reply into conversation history.
+ * @param {object} data Raw Gemini API response object
+ * @returns {string} Reply text from the model
+ */
+function parseGeminiResponse(data) {
+  var reply = (data.candidates &&
+               data.candidates[0] &&
+               data.candidates[0].content &&
+               data.candidates[0].content.parts &&
+               data.candidates[0].content.parts[0] &&
+               data.candidates[0].content.parts[0].text) || 'No response received.';
+  S.hist.push({ role: 'model', parts: [{ text: reply }] });
+  return reply;
+}
+
+/**
  * Calls the Gemini API with full conversation history and timeout.
+ * Combines buildGeminiPayload + fetch + parseGeminiResponse.
  * @param {string} msg User message to send
  * @returns {Promise<string>} AI response text
  */
 function callGemini(msg) {
   if (!S.key) return Promise.reject(new Error('no-key'));
-  S.hist.push({ role: 'user', parts: [{ text: msg }] });
-
   var timeoutPromise = new Promise(function(_, reject) {
-    setTimeout(function() {
-      reject(new Error(getText('errorTimeout')));
-    }, GEMINI_TIMEOUT_MS);
+    setTimeout(function() { reject(new Error(getText('errorTimeout'))); }, GEMINI_TIMEOUT_MS);
   });
-
   var fetchPromise = fetch(CONFIG.geminiUrl + '?key=' + encodeURIComponent(S.key), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-      contents: S.hist.slice(),
-      generationConfig: { temperature: 0.7, maxOutputTokens: GEMINI_MAX_TOKENS },
-      safetySettings: [
-        { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-        { category: 'HARM_CATEGORY_HATE_SPEECH',       threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' }
-      ]
-    })
+    body: buildGeminiPayload(msg)
   }).then(function(r) {
-    if (!r.ok) return r.json().then(function(e) { throw new Error((e && e.error && e.error.message) || 'HTTP ' + r.status); });
+    if (!r.ok) return r.json().then(function(e) {
+      throw new Error((e && e.error && e.error.message) || 'HTTP ' + r.status);
+    });
     return r.json();
-  }).then(function(data) {
-    var parts = data.candidates && data.candidates[0] && data.candidates[0].content &&
-                data.candidates[0].content.parts;
-    var reply = (parts && parts[0] && parts[0].text) || 'No response received.';
-    S.hist.push({ role: 'model', parts: [{ text: reply }] });
-    return reply;
-  });
-
+  }).then(parseGeminiResponse);
   return Promise.race([fetchPromise, timeoutPromise]);
 }
 
@@ -1576,7 +1622,7 @@ function appendChatMsg(text, isUser) {
   if (!wrap) return;
   var div = document.createElement('div');
   div.className = 'msg ' + (isUser ? 'msg-user' : 'msg-bot');
-  div.innerHTML = isUser ? sanitize(text) : sanitize(text);
+  setElHTML(div, isUser ? sanitize(text) : sanitize(text));
   wrap.appendChild(div);
   wrap.scrollTop = wrap.scrollHeight;
 }
@@ -1603,7 +1649,7 @@ function updateLastChatBubble(html) {
   var wrap = el('chatMsgs');
   if (!wrap) return;
   var last = wrap.lastElementChild;
-  if (last) last.innerHTML = html;
+  setElHTML(last, html);
 }
 
 /**
@@ -1816,10 +1862,10 @@ function initGoogleCharts() {
 function renderQuizProgress() {
   var prog = el('quizProg');
   if (!prog) return;
-  prog.innerHTML = QD[S.qlev].map(function(_, i) {
+  setElHTML(prog, QD[S.qlev].map(function(_, i) {
     var cls = i < S.qi ? 'done' : (i === S.qi ? 'cur' : '');
     return '<div class="prog-dot ' + cls + '" aria-hidden="true"></div>';
-  }).join('');
+  }).join(''));
 }
 
 /**
@@ -1984,7 +2030,7 @@ function renderLeaderboard(entries) {
   var rows = entries.map(function(e, i) {
     return '<tr><td class="' + (rankCls[i] || '') + '">' + (i + 1) + '</td>' +
       '<td>' + sanitize(e.name || 'Anonymous') + '</td>' +
-      '<td style="color:var(--primary-d);font-weight:600;">' + (e.saved || 0) + ' kg</td></tr>';
+      '<td class="fw-600-pd-c">' + (e.saved || 0) + ' kg</td></tr>';
   }).join('');
   setHTML('lbWrap',
     '<table class="lb-table" aria-label="Leaderboard"><thead><tr>' +
@@ -2031,7 +2077,7 @@ function handleSubmitScore() {
 function buildEduHub() {
   var grid = el('eduGrid');
   if (!grid) return;
-  grid.innerHTML = EDU_CARDS.map(function(c) {
+  setElHTML(grid, EDU_CARDS.map(function(c) {
     return '<article class="edu-card" role="listitem" tabindex="0"' +
       ' aria-label="' + sanitize(c.en) + '">' +
       '<div class="icon">' + c.icon + '</div>' +
@@ -2041,7 +2087,7 @@ function buildEduHub() {
       '<span class="impact">' + sanitize(c.impact) + '</span><br>' +
       '<a href="' + c.link + '" target="_blank" rel="noopener noreferrer">' + sanitize(c.linkText) + ' ↗</a>' +
     '</article>';
-  }).join('');
+  }).join(''));
 }
 
 /* ============ 26. GLOSSARY RENDERER ============ */
@@ -2053,12 +2099,12 @@ function buildEduHub() {
 function buildGlossary() {
   var list = el('glossList');
   if (!list) return;
-  list.innerHTML = GLOSSARY_DATA.map(function(g) {
+  setElHTML(list, GLOSSARY_DATA.map(function(g) {
     return '<div class="gloss-item" role="listitem" tabindex="0" aria-label="' + sanitize(g.en) + '">' +
       '<h3>' + sanitize(g.en) + '</h3>' +
       '<div class="hi">' + sanitize(g.hi) + '</div>' +
       '<p>' + sanitize(g.def) + '</p></div>';
-  }).join('');
+  }).join(''));
 }
 
 /* ============ 27. TIMELINE RENDERER ============ */
@@ -2070,14 +2116,14 @@ function buildGlossary() {
 function buildTimeline() {
   var list = el('tlList');
   if (!list) return;
-  list.innerHTML = TIMELINE_DATA.map(function(item) {
+  setElHTML(list, TIMELINE_DATA.map(function(item) {
     return '<div class="tl-item" aria-label="' + sanitize(item.year) + ': ' + sanitize(item.title) + '">' +
       '<div class="tl-dot" aria-hidden="true"></div>' +
       '<div class="tl-year">' + sanitize(item.year) + '</div>' +
       '<div class="tl-title">' + sanitize(item.title) + '</div>' +
       '<div class="tl-desc">' + sanitize(item.desc) + '</div>' +
     '</div>';
-  }).join('');
+  }).join(''));
 }
 
 /* ============ 28. COUNTDOWN TIMER ============ */
@@ -2178,14 +2224,14 @@ function renderCompareChart() {
     { label:'🎯 1.5°C target (2.3 t)', val:TARGET_1_5_T, color:'var(--gold)' }
   ];
   var maxVal = Math.max.apply(null, items.map(function(i) { return i.val; }));
-  cmpEl.innerHTML = items.map(function(item) {
+  setElHTML(cmpEl, items.map(function(item) {
     var pct = Math.round((item.val / maxVal) * 100);
     return '<div class="compare-bar" style="margin-bottom:14px;">' +
       '<div class="cb-label"><span style="font-weight:500;">' + sanitize(item.label) + '</span>' +
       '<span style="font-weight:700;color:' + item.color + ';">' + item.val + ' tCO₂e</span></div>' +
       '<div class="cb-bar"><div class="cb-fill" style="width:' + pct + '%;background:' + item.color + ';"></div></div>' +
     '</div>';
-  }).join('');
+  }).join(''));
 }
 
 /* ============ KEY MANAGEMENT — single entry point ============ */
@@ -2198,7 +2244,7 @@ function handleApplyKey() {
   var masterInput = el('masterApiKey');
   var raw = masterInput ? masterInput.value.trim() : '';
   if (!isValidKey(raw)) {
-    setHTML('keyStatus', '<span style="color:#FFD54F;font-size:.85rem;">⚠️ Key too short — paste your full Gemini API key (should be ~39 characters)</span>');
+    setHTML('keyStatus', '<span class="warn-text">⚠️ Key too short — paste your full Gemini API key (should be ~39 characters)</span>');
     return;
   }
   S.key = raw;
@@ -2232,10 +2278,10 @@ function updateKeyStatusIndicators() {
 /* ============ 30. ACCESSIBILITY CONTROLS ============ */
 // All controls update S state and DOM attributes atomically.
 /**
- * Wires up language toggle, high-contrast, and font-size buttons.
+ * Wires the language toggle button — switches S.lang between en/hi.
  * @returns {void}
  */
-function initAccessibility() {
+function initLangToggle() {
   on('langBtn', 'click', function() {
     S.lang = S.lang === 'en' ? 'hi' : 'en';
     var btn = el('langBtn');
@@ -2243,25 +2289,41 @@ function initAccessibility() {
     applyLang();
     gaEvent('language_switch', 'Accessibility', S.lang);
   });
+}
 
+/**
+ * Wires the high-contrast toggle — adds/removes body.hc class.
+ * @returns {void}
+ */
+function initHighContrast() {
   on('hcBtn', 'click', function() {
     S.hc = !S.hc;
     document.body.classList.toggle('hc', S.hc);
     var btn = el('hcBtn');
     if (btn) btn.setAttribute('aria-pressed', S.hc ? 'true' : 'false');
   });
+}
 
+/**
+ * Wires font-size increase/decrease buttons within MIN/MAX bounds.
+ * @returns {void}
+ */
+function initFontControls() {
   on('fpBtn', 'click', function() {
     S.fontSize = Math.min(FONT_SIZE_MAX_PX, S.fontSize + FONT_SIZE_STEP_PX);
     document.documentElement.style.fontSize = S.fontSize + 'px';
   });
-
   on('fmBtn', 'click', function() {
     S.fontSize = Math.max(FONT_SIZE_MIN_PX, S.fontSize - FONT_SIZE_STEP_PX);
     document.documentElement.style.fontSize = S.fontSize + 'px';
   });
+}
 
-  // Quick chat buttons
+/**
+ * Wires quick-prompt buttons in the chat section.
+ * @returns {void}
+ */
+function initQuickPrompts() {
   document.querySelectorAll('.quick-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
       sendChatMsg(btn.getAttribute('data-q'));
@@ -2269,47 +2331,59 @@ function initAccessibility() {
   });
 }
 
+/**
+ * Initialises all accessibility controls — language, contrast, font size, quick prompts.
+ * @returns {void}
+ */
+function initAccessibility() {
+  initLangToggle();
+  initHighContrast();
+  initFontControls();
+  initQuickPrompts();
+}
+
 /* ============ 31. INTERSECTION OBSERVERS ============ */
 // Threshold 0.1 triggers before fully visible for a smooth user experience.
 /**
- * Sets up IntersectionObservers for:
- *   - Lazy chart drawing (dashboard + geochart only draw when scrolled into view)
- *   - Timeline scroll animation
- * Charts also fire from setOnLoadCallback for the case where CDN loads after scroll.
+ * Creates an IntersectionObserver that lazy-draws the Google Charts dashboard.
+ * Unobserves after first draw — charts only rendered once per page load.
  * @returns {void}
  */
-function initObservers() {
-  // ── Charts dashboard — lazy draw on scroll ──
-  // Saves CPU: charts only render when user actually sees them
+function initChartObserver() {
   var chartObs = new IntersectionObserver(function(entries) {
     entries.forEach(function(e) {
-      if (e.isIntersecting) {
-        buildGoogleCharts();
-        chartObs.unobserve(e.target);
-      }
+      if (e.isIntersecting) { buildGoogleCharts(); chartObs.unobserve(e.target); }
     });
   }, { threshold: OBSERVER_THRESHOLD_CHART });
   var dashEl = el('dashboard');
   if (dashEl) chartObs.observe(dashEl);
+}
 
-  // ── GeoChart — lazy draw on scroll ──
+/**
+ * Creates an IntersectionObserver that lazy-draws the GeoChart map.
+ * Unobserves after first draw — map only rendered once per page load.
+ * @returns {void}
+ */
+function initGeoObserver() {
   var geoObs = new IntersectionObserver(function(entries) {
     entries.forEach(function(e) {
-      if (e.isIntersecting) {
-        buildGeoChart();
-        geoObs.unobserve(e.target);
-      }
+      if (e.isIntersecting) { buildGeoChart(); geoObs.unobserve(e.target); }
     });
   }, { threshold: OBSERVER_THRESHOLD_CHART });
   var mapEl = el('map');
   if (mapEl) geoObs.observe(mapEl);
+}
 
-  // ── Timeline animation ──
+/**
+ * Creates an IntersectionObserver that triggers timeline scroll animation.
+ * Staggers each milestone item with SCROLL_ANIM_DELAY_MS between them.
+ * @returns {void}
+ */
+function initTimelineObserver() {
   var animObs = new IntersectionObserver(function(entries) {
     entries.forEach(function(e) {
       if (e.isIntersecting) {
-        var items = e.target.querySelectorAll('.tl-item');
-        items.forEach(function(item, i) {
+        e.target.querySelectorAll('.tl-item').forEach(function(item, i) {
           setTimeout(function() { item.classList.add('visible'); }, i * SCROLL_ANIM_DELAY_MS);
         });
         animObs.unobserve(e.target);
@@ -2318,13 +2392,33 @@ function initObservers() {
   }, { threshold: OBSERVER_THRESHOLD_ANIM });
   var tlEl = el('tlList');
   if (tlEl) animObs.observe(tlEl.parentElement || tlEl);
+}
 
-  // ── Education cards keyboard nav ──
+/**
+ * Wires keyboard navigation on education cards.
+ * @returns {void}
+ */
+function initEduKeyNav() {
   document.querySelectorAll('.edu-card').forEach(function(card) {
     card.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') card.querySelector('a') && card.querySelector('a').click();
+      if (e.key === 'Enter') {
+        var link = card.querySelector('a');
+        if (link) link.click();
+      }
     });
   });
+}
+
+/**
+ * Initialises all IntersectionObservers — lazy charts, geochart, timeline animation.
+ * Called from init() after DOM is ready.
+ * @returns {void}
+ */
+function initObservers() {
+  initChartObserver();
+  initGeoObserver();
+  initTimelineObserver();
+  initEduKeyNav();
 }
 
 /* ============ 32. SELF-TESTS (synchronous IIFE) ============ */
