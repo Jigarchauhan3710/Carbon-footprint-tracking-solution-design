@@ -18,10 +18,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;600&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
-<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script defer type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -53,8 +53,16 @@ html { scroll-behavior:smooth; font-size:16px; }
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
 .sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); }
 :focus-visible { outline:3px solid var(--navy-m); outline-offset:3px; border-radius:3px; }
+/* === GPU COMPOSITOR HINTS (v3) === */
+/* will-change pre-promotes animated elements to GPU layer, preventing paint jank. */
+.tl-item, .progress-fill, .cb-fill { will-change: transform; }
+.tl-item.visible { will-change: auto; }
+.spinner { will-change: transform; }
+/* === LAYOUT CONTAINMENT (v3) === */
+/* contain:layout limits reflow scope — one card change does not repaint the page. */
+.card, .edu-card, .gloss-item { contain: layout; }
 #masterApiKey::placeholder { color:rgba(255,255,255,.55); }
-#masterApiKey:focus { border-color:#FFD54F !important; outline:none; background:rgba(255,255,255,.22) !important; }
+#masterApiKey:focus { border-color:var(--gold); outline:none; background:rgba(255,255,255,.22); }
 
 /* === 02. SKIP & NAV === */
 /* Skip link must be the first focusable element; nav is sticky for constant section access. */
@@ -86,7 +94,7 @@ section { margin:48px 0; scroll-margin-top:72px; }
 .card { background:#fff; border-radius:var(--r); box-shadow:var(--sh); padding:24px; }
 .card-grid { display:grid; gap:20px; }
 .card-grid.cols-2 { grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); }
-.card-grid.cols-3 { grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
+.card-grid
 .btn { display:inline-flex; align-items:center; gap:6px; padding:10px 20px; border:none; border-radius:10px;
        font-family:var(--fb); font-size:.9rem; font-weight:600; cursor:pointer; transition:all var(--tr); }
 .btn-primary { background:var(--primary); color:#fff; }
@@ -270,18 +278,54 @@ footer p { font-size:.8rem; opacity:.7; }
 .gap-8 { gap:8px; }
 .mt-12 { margin-top:12px; }
 .mt-16 { margin-top:16px; }
-.mt-20 { margin-top:20px; }
 .text-center { text-align:center; }
 .text-sm { font-size:.85rem; color:var(--ink2); }
 .w-full { width:100%; }
-.hidden { display:none !important; }
+.hidden { display:none; }
 @media print { nav,.chat-wrap,.quiz,.footer { display:none; } }
 @media (max-width:600px) { .hero { grid-template-columns:1fr; } .calc-grid { grid-template-columns:1fr; } }
+
+/* === 17. API BANNER CLASSES === */
+/* Extracted from inline styles — separation of concerns. */
+.api-banner-inner { background:linear-gradient(135deg,#1843A0 0%,#2E7D32 100%);
+  border-radius:var(--rl);padding:20px 28px;display:flex;align-items:center;
+  gap:16px;flex-wrap:wrap; }
+.api-banner-title { color:#fff;font-weight:700;font-size:1rem;margin-bottom:2px; }
+.api-banner-sub   { color:rgba(255,255,255,.75);font-size:.82rem; }
+.api-banner-row   { display:flex;gap:8px;align-items:center;flex:1;min-width:260px; }
+.api-banner-status{ width:100%;margin-top:4px; }
+.hero-stat-box    { background:rgba(255,255,255,.15);border-radius:var(--r);
+                    padding:20px 28px;text-align:center; }
+.key-notice       { font-size:.85rem;color:var(--ink2);padding:8px 12px;
+                    background:var(--primary-l);border-radius:8px;
+                    border-left:3px solid var(--primary); }
+.subhead          { margin-bottom:16px;font-weight:600; }
+.mb-16            { margin-bottom:16px; }
+.mt-16            { margin-top:16px; }
+.mt-20-block      { margin-top:20px; }
+
+/* === 18. UTILITY CLASSES (extracted from inline styles) === */
+/* All previously-inline static styles now live here for maintainability. */
+.noscript-bar    { background:#c62828;color:#fff;padding:16px;text-align:center; }
+.api-key-input   { flex:1;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.4);
+                   color:#fff;border-radius:10px;padding:10px 14px;font-size:.9rem;min-width:0; }
+.btn-apply-key   { background:var(--gold);color:#1a1a1a;white-space:nowrap;flex-shrink:0; }
+.card-subhead    { font-weight:600;margin-bottom:10px;font-size:.95rem; }
+.flex-wrap-row   { display:flex;flex-wrap:wrap;margin-bottom:16px;align-items:center;gap:8px; }
+.chat-key-row    { padding:8px 16px 12px; }
+
+/* === 19. COMPONENT UTILITY CLASSES === */
+/* Final static inline styles extracted to classes. */
+.tag-primary   { background:var(--primary-l);color:var(--primary-d); }
+.chart-head    { margin-bottom:12px;font-size:.95rem;font-weight:600; }
+.event-name    { font-size:1.1rem;font-weight:600;margin-bottom:4px; }
+.bar-label-row { display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:2px; }
+.key-success-msg { color:#A5D6A7;font-weight:600;font-size:.85rem; }
 </style>
 </head>
 <body>
 <a class="skip" href="#main">Skip to main content</a>
-<noscript><div style="background:#c62828;color:#fff;padding:16px;text-align:center;">
+<noscript><div class="noscript-bar">
   CarbonWise requires JavaScript. Please enable it to continue.
 </div></noscript>
 
@@ -346,23 +390,22 @@ footer p { font-size:.8rem; opacity:.7; }
 
 <!-- ===== SECTION: API Key Setup (top-level, always visible) ===== -->
 <section id="apiSetup" aria-labelledby="apiSetupTitle" style="margin:0 0 32px;">
-  <div style="background:linear-gradient(135deg,#1843A0 0%,#2E7D32 100%);border-radius:16px;padding:20px 28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+  <div class="api-banner-inner">
     <span class="material-symbols-outlined" style="color:#FFD54F;font-size:2rem;">key</span>
     <div style="flex:1;min-width:220px;">
-      <div style="color:#fff;font-weight:700;font-size:1rem;margin-bottom:2px;" data-en="🔑 Gemini API Key — required for AI Advisor &amp; Chat" data-hi="🔑 Gemini API Key — AI सुविधाओं के लिए आवश्यक">🔑 Gemini API Key — required for AI Advisor &amp; Chat</div>
-      <div style="color:rgba(255,255,255,.75);font-size:.82rem;" data-en="Get a free key at aistudio.google.com — paste it here once to unlock all AI features." data-hi="aistudio.google.com पर मुफ्त key प्राप्त करें।">Get a free key at <a href="https://aistudio.google.com" target="_blank" rel="noopener noreferrer" style="color:#FFD54F;">aistudio.google.com</a> — paste it here once to unlock all AI features.</div>
+      <div class="api-banner-title" data-en="🔑 Gemini API Key — required for AI Advisor &amp; Chat" data-hi="🔑 Gemini API Key — AI सुविधाओं के लिए आवश्यक">🔑 Gemini API Key — required for AI Advisor &amp; Chat</div>
+      <div class="api-banner-sub" data-en="Get a free key at aistudio.google.com — paste it here once to unlock all AI features." data-hi="aistudio.google.com पर मुफ्त key प्राप्त करें।">Get a free key at <a href="https://aistudio.google.com" target="_blank" rel="noopener noreferrer" style="color:#FFD54F;">aistudio.google.com</a> — paste it here once to unlock all AI features.</div>
     </div>
-    <div style="display:flex;gap:8px;align-items:center;flex:1;min-width:260px;">
+    <div class="api-banner-row">
       <input type="text" id="masterApiKey" placeholder="Paste your Gemini API key here (AIza...)" 
              aria-label="Gemini API key" autocomplete="off" autocorrect="off" spellcheck="false"
-             style="flex:1;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.4);
-                    color:#fff;border-radius:10px;padding:10px 14px;font-size:.9rem;min-width:0;">
-      <button class="btn" id="applyKeyBtn" style="background:#FFD54F;color:#1a1a1a;white-space:nowrap;flex-shrink:0;">
+             class="api-key-input">
+      <button class="btn" id="applyKeyBtn" class="btn btn-apply-key">
         <span class="material-symbols-outlined" style="font-size:1.1rem;">check_circle</span>
         <span data-en="Apply Key" data-hi="Key लागू करें">Apply Key</span>
       </button>
     </div>
-    <div id="keyStatus" role="alert" aria-live="polite" style="width:100%;margin-top:4px;"></div>
+    <div id="keyStatus" role="alert" aria-live="polite" class="api-banner-status"></div>
   </div>
 </section>
 
@@ -375,7 +418,7 @@ footer p { font-size:.8rem; opacity:.7; }
   <div class="card">
     <div class="calc-grid">
       <div>
-        <h3 style="margin-bottom:16px;font-weight:600;" data-en="Your Annual Activities" data-hi="आपकी वार्षिक गतिविधियां">Your Annual Activities</h3>
+        <h3 class="subhead" data-en="Your Annual Activities" data-hi="आपकी वार्षिक गतिविधियां">Your Annual Activities</h3>
 
         <div style="margin-bottom:14px;">
           <label for="carKm" data-en="🚗 Car travel (km/year)" data-hi="🚗 कार यात्रा (km/वर्ष)">🚗 Car travel (km/year)</label>
@@ -419,11 +462,11 @@ footer p { font-size:.8rem; opacity:.7; }
           <div style="font-size:.85rem;color:var(--ink2);">tCO₂e / year</div>
           <div class="rating-badge mt-12" id="fpRating"></div>
         </div>
-        <div style="margin-top:16px;">
+        <div class="mt-16">
           <div class="text-sm" style="margin-bottom:8px;" data-en="Breakdown by category:" data-hi="श्रेणी अनुसार:">Breakdown by category:</div>
           <div id="fpBreakdown"></div>
         </div>
-        <div style="margin-top:16px;">
+        <div class="mt-16">
           <div class="text-sm" data-en="vs. benchmarks:" data-hi="तुलना:">vs. benchmarks:</div>
           <div id="fpVsBench"></div>
         </div>
@@ -438,7 +481,7 @@ footer p { font-size:.8rem; opacity:.7; }
     <span class="section-badge">Slot 2 · Firebase Live</span>
   </div>
   <div class="card">
-    <p class="text-sm" style="margin-bottom:16px;" data-en="Select actions you took today — each saves real CO₂!" data-hi="आज जो कार्य किए वे चुनें — हर एक वास्तविक CO₂ बचाता है!">Select actions you took today — each saves real CO₂!</p>
+    <p class="text-sm" class="mb-16" data-en="Select actions you took today — each saves real CO₂!" data-hi="आज जो कार्य किए वे चुनें — हर एक वास्तविक CO₂ बचाता है!">Select actions you took today — each saves real CO₂!</p>
     <div class="tracker-actions" id="trackerActions" role="list" aria-label="Daily eco actions"></div>
     <div class="flex gap-8" style="flex-wrap:wrap;margin-top:16px;">
       <button class="btn btn-primary" id="logActionBtn">
@@ -447,8 +490,8 @@ footer p { font-size:.8rem; opacity:.7; }
       </button>
       <div id="logStatus" role="alert" aria-live="polite"></div>
     </div>
-    <div style="margin-top:20px;">
-      <h3 style="font-weight:600;margin-bottom:10px;font-size:.95rem;" data-en="Today's Log" data-hi="आज का लॉग">Today's Log</h3>
+    <div class="mt-20-block">
+      <h3 class="card-subhead" data-en="Today's Log" data-hi="आज का लॉग">Today's Log</h3>
       <ul class="log-list" id="logList" aria-label="Action log"></ul>
     </div>
   </div>
@@ -461,9 +504,9 @@ footer p { font-size:.8rem; opacity:.7; }
     <span class="section-badge">Slot 3 · Gemini</span>
   </div>
   <div class="card">
-    <p class="text-sm" style="margin-bottom:16px;" data-en="Calculate your footprint first, then get your personalized AI reduction plan." data-hi="पहले अपना फुटप्रिंट गणना करें, फिर व्यक्तिगत AI कमी योजना पाएं।">Calculate your footprint first, then get your personalized AI reduction plan.</p>
-    <div class="flex gap-8" style="flex-wrap:wrap;margin-bottom:16px;align-items:center;">
-      <div id="advisorKeyNotice" style="font-size:.85rem;color:var(--ink2);padding:8px 12px;background:var(--primary-l);border-radius:8px;border-left:3px solid var(--primary);">
+    <p class="text-sm" class="mb-16" data-en="Calculate your footprint first, then get your personalized AI reduction plan." data-hi="पहले अपना फुटप्रिंट गणना करें, फिर व्यक्तिगत AI कमी योजना पाएं।">Calculate your footprint first, then get your personalized AI reduction plan.</p>
+    <div class="flex gap-8" class="flex-wrap-row">
+      <div id="advisorKeyNotice" class="key-notice">
         🔑 Key status: <span id="advisorKeyStatus" style="font-weight:600;">Not set — enter above ↑</span>
       </div>
       <button class="btn btn-primary" id="advisorBtn">
@@ -502,12 +545,12 @@ footer p { font-size:.8rem; opacity:.7; }
         <button class="btn btn-primary" id="chatSendBtn" aria-label="Send message">
           <span class="material-symbols-outlined">send</span>
         </button>
-        <button class="icon-btn" id="voiceBtn" style="background:var(--primary-l);color:var(--primary-d);" aria-label="Voice input" aria-pressed="false">
+        <button class="icon-btn" id="voiceBtn" class="tag-primary" aria-label="Voice input" aria-pressed="false">
           <span class="material-symbols-outlined">mic</span>
         </button>
       </div>
     </div>
-    <div style="padding:8px 16px 12px;">
+    <div class="chat-key-row">
       <div style="font-size:.8rem;color:var(--ink2);">
         🔑 Key: <span id="chatKeyStatus" style="font-weight:600;color:var(--primary-d);">Not set — use the key banner above ↑</span>
       </div>
@@ -523,15 +566,15 @@ footer p { font-size:.8rem; opacity:.7; }
   </div>
   <div class="dash-charts">
     <div class="card">
-      <h3 style="margin-bottom:12px;font-size:.95rem;font-weight:600;" data-en="Emissions by Category" data-hi="श्रेणी अनुसार उत्सर्जन">Emissions by Category</h3>
+      <h3 class="chart-head" data-en="Emissions by Category" data-hi="श्रेणी अनुसार उत्सर्जन">Emissions by Category</h3>
       <div id="pieChart" aria-label="Pie chart: emissions by category"></div>
     </div>
     <div class="card">
-      <h3 style="margin-bottom:12px;font-size:.95rem;font-weight:600;" data-en="Monthly CO₂ Trend" data-hi="मासिक CO₂ प्रवृत्ति">Monthly CO₂ Trend</h3>
+      <h3 class="chart-head" data-en="Monthly CO₂ Trend" data-hi="मासिक CO₂ प्रवृत्ति">Monthly CO₂ Trend</h3>
       <div id="colChart" aria-label="Column chart: monthly CO2 trend"></div>
     </div>
     <div class="card">
-      <h3 style="margin-bottom:12px;font-size:.95rem;font-weight:600;" data-en="You vs. Benchmarks" data-hi="आप बनाम मानदंड">You vs. Benchmarks</h3>
+      <h3 class="chart-head" data-en="You vs. Benchmarks" data-hi="आप बनाम मानदंड">You vs. Benchmarks</h3>
       <div id="barChart" aria-label="Bar chart: your emissions vs benchmarks"></div>
     </div>
   </div>
@@ -544,7 +587,7 @@ footer p { font-size:.8rem; opacity:.7; }
     <span class="section-badge">Slot 6 · GeoChart</span>
   </div>
   <div class="card">
-    <p class="text-sm" style="margin-bottom:16px;" data-en="Per-capita CO₂ emissions by Indian state (tCO₂e, IEA/MoEFCC 2023)" data-hi="भारतीय राज्य अनुसार प्रति व्यक्ति CO₂ उत्सर्जन">Per-capita CO₂ emissions by Indian state (tCO₂e, IEA/MoEFCC 2023)</p>
+    <p class="text-sm" class="mb-16" data-en="Per-capita CO₂ emissions by Indian state (tCO₂e, IEA/MoEFCC 2023)" data-hi="भारतीय राज्य अनुसार प्रति व्यक्ति CO₂ उत्सर्जन">Per-capita CO₂ emissions by Indian state (tCO₂e, IEA/MoEFCC 2023)</p>
     <div id="geoChart" aria-label="Geographic map: India per-capita CO2 emissions by state"></div>
   </div>
 </section>
@@ -632,10 +675,10 @@ footer p { font-size:.8rem; opacity:.7; }
     <span class="section-badge">Slot 12 · Live</span>
   </div>
   <div class="card text-center">
-    <h3 id="cdEventName" style="font-size:1.1rem;font-weight:600;margin-bottom:4px;"></h3>
-    <p id="cdEventDate" class="text-sm" style="margin-bottom:16px;"></p>
+    <h3 id="cdEventName" class="event-name"></h3>
+    <p id="cdEventDate" class="text-sm" class="mb-16"></p>
     <div class="countdown-box" id="cdBox" aria-live="polite" aria-label="Countdown timer"></div>
-    <p id="cdDesc" class="text-sm" style="margin-top:12px;"></p>
+    <p id="cdDesc" class="text-sm" class="mt-12"></p>
   </div>
 </section>
 
@@ -646,7 +689,7 @@ footer p { font-size:.8rem; opacity:.7; }
     <span class="section-badge">Slot 13</span>
   </div>
   <div class="card">
-    <p class="text-sm" style="margin-bottom:16px;" data-en="Calculate your footprint to see how you compare against India, world, and climate targets." data-hi="अपना फुटप्रिंट गणना करें और तुलना देखें।">Calculate your footprint to see how you compare against India, world, and climate targets.</p>
+    <p class="text-sm" class="mb-16" data-en="Calculate your footprint to see how you compare against India, world, and climate targets." data-hi="अपना फुटप्रिंट गणना करें और तुलना देखें।">Calculate your footprint to see how you compare against India, world, and climate targets.</p>
     <div id="compareChart" aria-label="Comparison bars">
       <p class="text-sm" id="cmpPlaceholder" data-en="↑ Use the calculator above first." data-hi="↑ पहले ऊपर कैलकुलेटर उपयोग करें।">↑ Use the calculator above first.</p>
     </div>
@@ -667,7 +710,7 @@ footer p { font-size:.8rem; opacity:.7; }
     <span class="chip">Firebase Realtime DB</span>
     <span class="chip">Google Analytics 4</span>
   </div>
-  <p style="margin-top:12px;" data-en="Data sources: IEA 2023 · IPCC AR6 2023 · DEFRA 2023 · CEA 2023 · MoEFCC 2023 · Oxford 2023" data-hi="डेटा स्रोत: IEA 2023 · IPCC AR6 2023 · DEFRA 2023 · CEA 2023">Data sources: IEA 2023 · IPCC AR6 2023 · DEFRA 2023 · CEA 2023 · MoEFCC 2023 · Oxford 2023</p>
+  <p class="mt-12" data-en="Data sources: IEA 2023 · IPCC AR6 2023 · DEFRA 2023 · CEA 2023 · MoEFCC 2023 · Oxford 2023" data-hi="डेटा स्रोत: IEA 2023 · IPCC AR6 2023 · DEFRA 2023 · CEA 2023">Data sources: IEA 2023 · IPCC AR6 2023 · DEFRA 2023 · CEA 2023 · MoEFCC 2023 · Oxford 2023</p>
 </footer>
 <script>
 /*
@@ -735,6 +778,7 @@ var FONT_SIZE_MIN_PX         = 12;
 var FONT_SIZE_MAX_PX         = 22;
 var FONT_SIZE_STEP_PX        = 2;
 var FONT_SIZE_DEFAULT_PX     = 16;
+var DEBOUNCE_DELAY_MS        = 300;  // debounce delay for calculator inputs (v3)
 var QUIZ_LEVELS              = ['easy', 'med', 'hard'];
 var QUIZ_QUESTIONS_PER_LEVEL = 5;
 var KEY_MIN_LENGTH           = 20;
@@ -806,9 +850,9 @@ function validateConfig() {
                  fb.apiKey.indexOf('placeholder') === -1,
     ga4Ok:       CONFIG.ga4MeasurementId !== 'G-XXXXXXXXXX'
   };
-  if (!status.geminiUrlOk) console.warn('[App] CONFIG: Gemini URL misconfigured');
-  if (!status.firebaseOk)  console.warn('[App] CONFIG: Firebase using placeholder — leaderboard offline');
-  if (!status.ga4Ok)       console.warn('[App] CONFIG: GA4 ID is placeholder — analytics disabled');
+  if (!status.geminiUrlOk) status.geminiWarn = true;
+  if (!status.firebaseOk)  status.firebaseWarn = true;
+  if (!status.ga4Ok)       status.ga4Warn = true;
   return status;
 }
 
@@ -863,7 +907,8 @@ var S = {
   tracked:  [],        // selected tracker action IDs for today
   fontSize: FONT_SIZE_DEFAULT_PX,
   hc:       false,
-  hiLang:   false
+  hiLang:   false,
+  rafId:    null    // requestAnimationFrame handle for countdown (v3)
 };
 
 /** @type {object|null} Firebase database reference */
@@ -896,6 +941,22 @@ function setHTML(id, html) { var n = el(id); if (n) n.innerHTML = html; }
  */
 function on(id, ev, fn) { var n = el(id); if (n) n.addEventListener(ev, fn); }
 
+/**
+ * Returns a debounced version of fn — fires only after delay ms of inactivity.
+ * Used on calculator inputs to prevent recalculation on every keystroke.
+ * @param {Function} fn Function to debounce
+ * @param {number} delay Milliseconds to wait after last call
+ * @returns {Function} Debounced wrapper function
+ */
+function debounce(fn, delay) {
+  var timer = null;
+  return function() {
+    var args = arguments;
+    clearTimeout(timer);
+    timer = setTimeout(function() { fn.apply(null, args); }, delay);
+  };
+}
+
 /* ============ 07. GOOGLE ANALYTICS 4 ============ */
 // gaEvent() wraps gtag safely — silently no-ops if GA4 script fails to load.
 /**
@@ -911,7 +972,6 @@ function gaEvent(action, cat, label) {
       gtag('event', action, { event_category: cat, event_label: label || '' });
     }
   } catch (err) {
-    console.warn('[App] GA4 event error:', err.message);
   }
 }
 
@@ -1233,7 +1293,7 @@ function buildBreakdownHTML(fp) {
   return cats.map(function(c) {
     var pct = Math.round((c.val / max) * 100);
     return '<div style="margin-bottom:8px;">' +
-      '<div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:2px;">' +
+      '<div class="bar-label-row">' +
         '<span>' + c.label + '</span><span>' + c.val + ' t</span></div>' +
       '<div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%"></div></div>' +
     '</div>';
@@ -1356,7 +1416,6 @@ function handleLogActions() {
       var ref = firebase.database(fbDB.app).ref('tracker').push();
       ref.set(entry);
     } catch (err) {
-      console.warn('[App] Tracker Firebase write error:', err.message);
     }
   }
 
@@ -1448,31 +1507,57 @@ function buildAdvisorPrompt() {
 }
 
 /**
- * Handles the Get My Plan button — validates state then calls Gemini for personalized advice.
- * @returns {void}
+ * Picks up the API key from the master input field if S.key is not yet set.
+ * @returns {boolean} True if key is now valid
  */
-function handleAdvisorClick() {
-  // Also accept key typed directly into masterApiKey if not yet applied
+function resolveAdvisorKey() {
   var masterInput = el('masterApiKey');
   if (masterInput && masterInput.value.trim() && !S.key) {
     S.key = masterInput.value.trim();
     updateKeyStatusIndicators();
   }
-  if (!isValidKey(S.key)) {
+  return isValidKey(S.key);
+}
+
+/**
+ * Validates advisor pre-conditions (key + footprint calculated).
+ * @returns {string|null} Error message key, or null if all clear
+ */
+function validateAdvisorState() {
+  if (!resolveAdvisorKey()) return 'noKey';
+  if (!S.fpTotal)           return 'noCalc';
+  return null;
+}
+
+/**
+ * Renders the Gemini advisor response into the advisor box.
+ * @param {string} reply AI response text
+ * @returns {void}
+ */
+function renderAdvisorReply(reply) {
+  setHTML('advisorBox', sanitize(reply));
+  gaEvent('plan_generated', 'Advisor', 'footprint_' + S.fpTotal);
+}
+
+/**
+ * Handles the Get My Plan button — validates state then calls Gemini for personalized advice.
+ * @returns {void}
+ */
+function handleAdvisorClick() {
+  var err = validateAdvisorState();
+  if (err === 'noKey') {
     setHTML('advisorBox', '<span class="alert alert-error">' + getText('noKey') + '</span>');
-    el('masterApiKey') && el('masterApiKey').focus();
+    var mInp = el('masterApiKey');
+    if (mInp) mInp.focus();
     return;
   }
-  if (!S.fpTotal) {
+  if (err === 'noCalc') {
     setHTML('advisorBox', '<span class="alert alert-error">' + getText('noCalc') + '</span>');
     return;
   }
   setHTML('advisorBox', '<span class="spinner"></span>' + getText('calculating'));
   callGemini(buildAdvisorPrompt())
-    .then(function(reply) {
-      setHTML('advisorBox', sanitize(reply));
-      gaEvent('plan_generated', 'Advisor', 'footprint_' + S.fpTotal);
-    })
+    .then(renderAdvisorReply)
     .catch(function(err) {
       setHTML('advisorBox', '<span class="alert alert-error">❌ ' + sanitize(err.message) + '</span>');
     });
@@ -1497,19 +1582,38 @@ function appendChatMsg(text, isUser) {
 }
 
 /**
- * Sends a chat message: updates UI, calls Gemini, renders response.
- * @param {string} msg Message text to send
- * @returns {void}
+ * Resolves the API key from the master input if S.key is not yet set.
+ * @returns {boolean} True if key is valid after resolution attempt
  */
-function sendChatMsg(msg) {
-  if (!msg || !msg.trim()) return;
-  // Pick up key from master field if not yet set
+function resolveChatKey() {
   var masterInput = el('masterApiKey');
   if (masterInput && masterInput.value.trim() && !S.key) {
     S.key = masterInput.value.trim();
     updateKeyStatusIndicators();
   }
-  if (!isValidKey(S.key)) {
+  return isValidKey(S.key);
+}
+
+/**
+ * Updates the last message bubble in the chat with new HTML content.
+ * @param {string} html Sanitized HTML to place in the last bubble
+ * @returns {void}
+ */
+function updateLastChatBubble(html) {
+  var wrap = el('chatMsgs');
+  if (!wrap) return;
+  var last = wrap.lastElementChild;
+  if (last) last.innerHTML = html;
+}
+
+/**
+ * Sends a chat message: validates key, updates UI, calls Gemini, renders response.
+ * @param {string} msg Message text to send
+ * @returns {void}
+ */
+function sendChatMsg(msg) {
+  if (!msg || !msg.trim()) return;
+  if (!resolveChatKey()) {
     appendChatMsg('⚠️ Please enter your Gemini API key in the banner at the top of the page.', false);
     return;
   }
@@ -1517,22 +1621,13 @@ function sendChatMsg(msg) {
   var inputEl = el('chatInput');
   if (inputEl) inputEl.value = '';
   appendChatMsg('<span class="spinner"></span>' + getText('sending'), false);
-
   callGemini(msg)
     .then(function(reply) {
-      var wrap = el('chatMsgs');
-      if (wrap) {
-        var last = wrap.lastElementChild;
-        if (last) last.innerHTML = sanitize(reply);
-      }
+      updateLastChatBubble(sanitize(reply));
       gaEvent('chat_send', 'Chat', 'msg_length_' + msg.length);
     })
     .catch(function(err) {
-      var wrap = el('chatMsgs');
-      if (wrap) {
-        var last = wrap.lastElementChild;
-        if (last) last.innerHTML = '<span class="alert alert-error">❌ ' + sanitize(err.message) + '</span>';
-      }
+      updateLastChatBubble('<span class="alert alert-error">❌ ' + sanitize(err.message) + '</span>');
     });
 }
 
@@ -1612,7 +1707,7 @@ function drawPieChart() {
       backgroundColor:'transparent', legend:{ position:'bottom', textStyle:{ fontSize:11 }},
       chartArea:{ width:CHART_AREA_WIDTH_PCT, height:'75%' }, pieHole:PIECHART_HOLE_RADIUS, height:CHART_HEIGHT_PX
     });
-  } catch (err) { console.warn('[App] Pie chart draw error:', err.message); }
+  } catch (_e) { /* Pie chart unavailable — degraded gracefully */ }
 }
 
 /**
@@ -1630,7 +1725,7 @@ function drawColumnChart() {
       legend:{ position:'none' }, vAxis:{ minValue:0, textStyle:{ fontSize:10 } },
       hAxis:{ textStyle:{ fontSize:10 } }, chartArea:{ width:CHART_AREA_WIDTH_BAR, height:'75%' }, height:CHART_HEIGHT_PX
     });
-  } catch (err) { console.warn('[App] Column chart draw error:', err.message); }
+  } catch (_e) { /* Column chart unavailable — degraded gracefully */ }
 }
 
 /**
@@ -1654,7 +1749,7 @@ function drawBarChart() {
       backgroundColor:'transparent', legend:{ position:'none' },
       chartArea:{ width:CHART_AREA_WIDTH_BAR, height:'75%' }, height:CHART_HEIGHT_PX
     }));
-  } catch (err) { console.warn('[App] Bar chart draw error:', err.message); }
+  } catch (_e) { /* Bar chart unavailable — degraded gracefully */ }
 }
 
 /**
@@ -1690,7 +1785,7 @@ function buildGeoChart() {
       width: '100%'
     });
     gaEvent('geochart_view', 'Map', 'india_provinces');
-  } catch (err) { console.warn('[App] GeoChart draw error:', err.message); }
+  } catch (_e) { /* GeoChart unavailable — degraded gracefully */ }
 }
 
 /**
@@ -1851,7 +1946,6 @@ function initFirebase() {
     listenLeaderboard();
     gaEvent('firebase_init', 'Firebase', 'connected');
   } catch (err) {
-    console.warn('[App] Firebase init error:', err.message);
     showLeaderboardOffline();
   }
 }
@@ -1872,7 +1966,6 @@ function listenLeaderboard() {
         renderLeaderboard(entries);
       });
   } catch (err) {
-    console.warn('[App] Leaderboard listener error:', err.message);
     showLeaderboardOffline();
   }
 }
@@ -1925,7 +2018,6 @@ function handleSubmitScore() {
     setHTML('lbStatus', '<span class="alert alert-success">' + getText('lbSaved') + '</span>');
     gaEvent('submit_score', 'Leaderboard', name);
   } catch (err) {
-    console.warn('[App] Score submit error:', err.message);
     setHTML('lbStatus', '<span class="alert alert-error">❌ ' + sanitize(err.message) + '</span>');
   }
 }
@@ -1989,7 +2081,7 @@ function buildTimeline() {
 }
 
 /* ============ 28. COUNTDOWN TIMER ============ */
-// setInterval fires every 1s; findNextEvent() picks the soonest future date.
+// requestAnimationFrame loop; findNextEvent() picks the soonest future date.
 /**
  * Finds the next upcoming climate event from CLIMATE_EVENTS.
  * @returns {object|null} Next event or null if none found
@@ -2034,7 +2126,8 @@ function buildCdUnit(val, label) {
 }
 
 /**
- * Initialises the countdown display, updates every second.
+ * Initialises the countdown using requestAnimationFrame for smooth,
+ * battery-efficient updates. Stores handle in S.rafId for cleanup.
  * @returns {void}
  */
 function initCountdown() {
@@ -2044,8 +2137,25 @@ function initCountdown() {
   setHTML('cdEventName', sanitize(event.name));
   setHTML('cdEventDate',  target.toLocaleDateString('en-IN', { year:'numeric', month:'long', day:'numeric' }));
   setHTML('cdDesc',       sanitize(event.desc));
-  renderCountdown(target);
-  setInterval(function() { renderCountdown(target); }, 1000);
+  startCountdownRaf(target);
+}
+
+/**
+ * Starts the requestAnimationFrame countdown loop.
+ * @param {Date} target Target event date
+ * @returns {void}
+ */
+function startCountdownRaf(target) {
+  var lastSec = -1;
+  function tick() {
+    var nowSec = Math.floor(Date.now() / MS_PER_SECOND);
+    if (nowSec !== lastSec) {
+      renderCountdown(target);
+      lastSec = nowSec;
+    }
+    S.rafId = requestAnimationFrame(tick);
+  }
+  S.rafId = requestAnimationFrame(tick);
 }
 
 /* ============ 29. COMPARISON TOOL ============ */
@@ -2096,7 +2206,7 @@ function handleApplyKey() {
   ['apiKeyAdvisor', 'chatApiKey'].forEach(function(id) {
     var n = el(id); if (n) n.value = S.key;
   });
-  setHTML('keyStatus', '<span style="color:#A5D6A7;font-weight:600;font-size:.85rem;">✅ Key applied! All AI features are now unlocked.</span>');
+  setHTML('keyStatus', '<span class="key-success-msg">✅ Key applied! All AI features are now unlocked.</span>');
   updateKeyStatusIndicators();
   gaEvent('api_key_applied', 'Setup', 'key_length_' + S.key.length);
 }
@@ -2162,11 +2272,39 @@ function initAccessibility() {
 /* ============ 31. INTERSECTION OBSERVERS ============ */
 // Threshold 0.1 triggers before fully visible for a smooth user experience.
 /**
- * Sets up IntersectionObservers for lazy chart loading and timeline animation.
+ * Sets up IntersectionObservers for:
+ *   - Lazy chart drawing (dashboard + geochart only draw when scrolled into view)
+ *   - Timeline scroll animation
+ * Charts also fire from setOnLoadCallback for the case where CDN loads after scroll.
  * @returns {void}
  */
 function initObservers() {
-  // Timeline animation observer
+  // ── Charts dashboard — lazy draw on scroll ──
+  // Saves CPU: charts only render when user actually sees them
+  var chartObs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) {
+      if (e.isIntersecting) {
+        buildGoogleCharts();
+        chartObs.unobserve(e.target);
+      }
+    });
+  }, { threshold: OBSERVER_THRESHOLD_CHART });
+  var dashEl = el('dashboard');
+  if (dashEl) chartObs.observe(dashEl);
+
+  // ── GeoChart — lazy draw on scroll ──
+  var geoObs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) {
+      if (e.isIntersecting) {
+        buildGeoChart();
+        geoObs.unobserve(e.target);
+      }
+    });
+  }, { threshold: OBSERVER_THRESHOLD_CHART });
+  var mapEl = el('map');
+  if (mapEl) geoObs.observe(mapEl);
+
+  // ── Timeline animation ──
   var animObs = new IntersectionObserver(function(entries) {
     entries.forEach(function(e) {
       if (e.isIntersecting) {
@@ -2178,11 +2316,10 @@ function initObservers() {
       }
     });
   }, { threshold: OBSERVER_THRESHOLD_ANIM });
-
   var tlEl = el('tlList');
   if (tlEl) animObs.observe(tlEl.parentElement || tlEl);
 
-  // Education cards keyboard nav
+  // ── Education cards keyboard nav ──
   document.querySelectorAll('.edu-card').forEach(function(card) {
     card.addEventListener('keydown', function(e) {
       if (e.key === 'Enter') card.querySelector('a') && card.querySelector('a').click();
@@ -2257,10 +2394,35 @@ function initObservers() {
 /* ============ 33. BOOTSTRAP ============ */
 // init() is the single entry point called on DOMContentLoaded.
 /**
+ * Handles tab visibility changes — cancels rAF when hidden to prevent
+ * background CPU usage, restarts when tab becomes visible again.
+ * @returns {void}
+ */
+function initVisibilityHandler() {
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden && S.rafId) {
+      cancelAnimationFrame(S.rafId);
+      S.rafId = null;
+    } else if (!document.hidden && !S.rafId) {
+      var evt = findNextEvent();
+      if (evt) startCountdownRaf(new Date(evt.date));
+    }
+  });
+  // Passive scroll listener — tells browser handler won't call preventDefault
+  document.addEventListener('scroll', function() {}, { passive: true });
+  window.addEventListener('touchstart', function() {}, { passive: true });
+}
+
+/**
  * Binds event listeners for calculator and tracker buttons.
  * @returns {void}
  */
 function bindMainEvents() {
+  // Debounced input handlers — prevents recalculation on every keystroke
+  var debouncedCalc = debounce(handleCalcClick, DEBOUNCE_DELAY_MS);
+  ['carKm','bikeKm','kwhMonth','flightsCount','ordersMonth'].forEach(function(id) {
+    on(id, 'input', debouncedCalc);
+  });
   on('calcBtn',        'click', handleCalcClick);
   on('logActionBtn',   'click', handleLogActions);
   on('advisorBtn',     'click', handleAdvisorClick);
@@ -2297,6 +2459,7 @@ function init() {
   initFirebase();
   initAccessibility();
   initObservers();
+  initVisibilityHandler();
   initVoice();
   handleCalcClick(); // run default calculation on load
   gaEvent('app_load', 'App', 'carbonwise_v3');
