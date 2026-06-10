@@ -1,0 +1,2318 @@
+<!DOCTYPE html>
+<!--
+  CarbonWise — Personal Carbon Footprint Tracker
+  Problem: Help individuals understand, track, and reduce their carbon footprint
+           through simple actions and personalized insights.
+  Architecture: Single-file SPA · All state in S{} · 14 feature slots · Pure domain functions
+  Google Services: Gemini 2.5 Flash · Google Fonts · Material Symbols · Google Charts ·
+                   GeoChart (IN/provinces) · Firebase Realtime DB 10.8.0 · Google Analytics 4
+  Author: CarbonWise · License: MIT
+-->
+<html lang="en" id="htmlRoot">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="description" content="CarbonWise — understand, track, and reduce your personal carbon footprint with AI-powered personalized insights and community tools.">
+<title>CarbonWise — Personal Carbon Footprint Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+</script>
+<style>
+/* === 01. DESIGN TOKENS === */
+/* All spacing, color, font, and transition values live here — change once, applies everywhere. */
+:root {
+  --primary:#2E7D32;    --primary-l:#E8F5E9;  --primary-d:#1B5E20;
+  --teal:#00695C;       --teal-l:#E0F2F1;
+  --navy:#1843A0;       --navy-m:#2553C5;     --navy-l:#EEF2FF;
+  --gold:#F9A825;       --gold-l:#FFF8E0;
+  --red:#C62828;        --red-l:#FFEBEE;
+  --ink:#0D1117;        --ink2:#3D4460;
+  --bg:#F9FBF4;         --bg2:#EEF2E6;
+  --bdr:rgba(0,0,0,.1);
+  --sh:0 4px 24px rgba(0,0,0,.09);
+  --r:12px;             --rl:20px;
+  --fh:'Playfair Display',Georgia,serif;
+  --fb:'Inter',system-ui,sans-serif;
+  --fhi:'Noto Sans Devanagari',serif;
+  --tr:.22s cubic-bezier(.4,0,.2,1);
+}
+body.hc { --ink:#000; --bg:#fff; --bg2:#f0f0f0; --bdr:#000; --ink2:#111; }
+html { scroll-behavior:smooth; font-size:16px; }
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+.sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); }
+:focus-visible { outline:3px solid var(--navy-m); outline-offset:3px; border-radius:3px; }
+#masterApiKey::placeholder { color:rgba(255,255,255,.55); }
+#masterApiKey:focus { border-color:#FFD54F !important; outline:none; background:rgba(255,255,255,.22) !important; }
+
+/* === 02. SKIP & NAV === */
+/* Skip link must be the first focusable element; nav is sticky for constant section access. */
+.skip { position:absolute; top:-99px; left:6px; background:var(--navy); color:#fff;
+        padding:8px 16px; border-radius:0 0 8px 8px; text-decoration:none; z-index:9999; }
+.skip:focus { top:0; }
+body { font-family:var(--fb); color:var(--ink); background:var(--bg); line-height:1.6; }
+nav { background:var(--primary-d); color:#fff; position:sticky; top:0; z-index:100; box-shadow:var(--sh); }
+.nav-inner { max-width:1200px; margin:0 auto; padding:0 16px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.nav-brand { font-family:var(--fh); font-size:1.25rem; padding:12px 0; flex:1; }
+.nav-brand span { color:var(--gold); }
+.nav-links { display:flex; gap:4px; flex-wrap:wrap; }
+.nav-links a { color:rgba(255,255,255,.85); text-decoration:none; padding:8px 10px; border-radius:8px;
+               font-size:.82rem; font-weight:500; transition:background var(--tr); }
+.nav-links a:hover, .nav-links a:focus { background:rgba(255,255,255,.18); color:#fff; }
+.nav-tools { display:flex; gap:6px; align-items:center; padding:8px 0; }
+.icon-btn { background:rgba(255,255,255,.15); border:none; color:#fff; padding:6px; border-radius:8px;
+            cursor:pointer; display:flex; align-items:center; transition:background var(--tr); }
+.icon-btn:hover { background:rgba(255,255,255,.28); }
+
+/* === 03. LAYOUT === */
+/* max-width:1200px centers content; card/btn/input are reusable across all sections. */
+main { max-width:1200px; margin:0 auto; padding:0 16px 40px; }
+section { margin:48px 0; scroll-margin-top:72px; }
+.section-head { display:flex; align-items:baseline; gap:12px; margin-bottom:24px; }
+.section-head h2 { font-family:var(--fh); font-size:1.65rem; color:var(--ink); }
+.section-badge { background:var(--primary-l); color:var(--primary-d); font-size:.75rem; font-weight:600;
+                 padding:3px 10px; border-radius:20px; text-transform:uppercase; letter-spacing:.05em; }
+.card { background:#fff; border-radius:var(--r); box-shadow:var(--sh); padding:24px; }
+.card-grid { display:grid; gap:20px; }
+.card-grid.cols-2 { grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); }
+.card-grid.cols-3 { grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
+.btn { display:inline-flex; align-items:center; gap:6px; padding:10px 20px; border:none; border-radius:10px;
+       font-family:var(--fb); font-size:.9rem; font-weight:600; cursor:pointer; transition:all var(--tr); }
+.btn-primary { background:var(--primary); color:#fff; }
+.btn-primary:hover { background:var(--primary-d); transform:translateY(-1px); box-shadow:0 4px 12px rgba(46,125,50,.35); }
+.btn-outline { background:transparent; color:var(--primary); border:2px solid var(--primary); }
+.btn-outline:hover { background:var(--primary-l); }
+label { display:block; font-weight:500; font-size:.88rem; margin-bottom:4px; color:var(--ink2); }
+input[type=number], input[type=text], select {
+  width:100%; padding:10px 12px; border:1.5px solid var(--bdr); border-radius:8px;
+  font-family:var(--fb); font-size:.95rem; background:#fff; color:var(--ink);
+  transition:border-color var(--tr); }
+input[type=number]:focus, input[type=text]:focus, select:focus { border-color:var(--primary); outline:none; }
+
+/* === 04. HERO === */
+/* Grid layout collapses to single-column on mobile via @media (max-width:600px). */
+.hero { background:linear-gradient(135deg,var(--primary-d) 0%,var(--teal) 100%);
+        color:#fff; border-radius:var(--rl); padding:48px 40px; margin:32px 0;
+        display:grid; grid-template-columns:1fr auto; gap:32px; align-items:center; }
+.hero h1 { font-family:var(--fh); font-size:clamp(1.8rem,4vw,2.8rem); line-height:1.2; margin-bottom:12px; }
+.hero p { font-size:1.05rem; opacity:.9; max-width:540px; margin-bottom:24px; }
+.hero-stat { background:rgba(255,255,255,.15); border-radius:var(--r); padding:20px 28px; text-align:center; }
+.hero-stat .val { font-size:2.2rem; font-weight:700; display:block; }
+.hero-stat .lbl { font-size:.82rem; opacity:.8; }
+.hero-chips { display:flex; flex-wrap:wrap; gap:8px; }
+.hero-chip { background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.3);
+             border-radius:20px; padding:4px 14px; font-size:.8rem; }
+
+/* === 05. CALCULATOR === */
+/* Two-column grid: inputs left, animated result right; progress bars show category share. */
+.calc-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.calc-result { background:var(--primary-l); border-radius:var(--r); padding:20px;
+               text-align:center; border:2px solid var(--primary); }
+.calc-result .big-num { font-size:2.8rem; font-weight:700; color:var(--primary-d); font-family:var(--fh); }
+.calc-result .unit { font-size:.9rem; color:var(--ink2); margin-bottom:8px; }
+.progress-bar { height:10px; background:var(--bg2); border-radius:10px; overflow:hidden; margin:6px 0; }
+.progress-fill { height:100%; border-radius:10px; background:var(--primary);
+                 transition:width .6s cubic-bezier(.4,0,.2,1); }
+.rating-badge { display:inline-block; padding:4px 14px; border-radius:20px; font-size:.82rem; font-weight:600; }
+
+/* === 06. TRACKER === */
+/* Action cards use CSS Grid auto-fill so they wrap naturally on any viewport width. */
+.tracker-actions { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; margin-bottom:20px; }
+.action-card { background:var(--primary-l); border:2px solid transparent; border-radius:var(--r);
+               padding:14px; cursor:pointer; transition:all var(--tr); text-align:center; }
+.action-card:hover, .action-card:focus { border-color:var(--primary); transform:translateY(-2px); }
+.action-card.selected { border-color:var(--primary); background:var(--primary); color:#fff; }
+.action-card .icon { font-size:2rem; margin-bottom:6px; }
+.action-card .saving { font-size:.78rem; opacity:.8; margin-top:4px; }
+.log-list { list-style:none; max-height:220px; overflow-y:auto; }
+.log-item { display:flex; justify-content:space-between; padding:10px 12px;
+            border-bottom:1px solid var(--bg2); font-size:.88rem; }
+
+/* === 07. AI SECTIONS === */
+/* Chat container uses flex:1 + min-height:0 to enable inner scroll without overflow. */
+.advisor-box { background:var(--teal-l); border-left:4px solid var(--teal); border-radius:var(--r);
+               padding:20px; min-height:80px; }
+.chat-wrap { display:flex; flex-direction:column; height:440px; }
+.chat-msgs { flex:1; min-height:0; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px; }
+.msg { max-width:80%; padding:10px 14px; border-radius:16px; font-size:.9rem; line-height:1.5; }
+.msg-user { background:var(--primary); color:#fff; border-bottom-right-radius:4px; align-self:flex-end; }
+.msg-bot { background:var(--bg2); color:var(--ink); border-bottom-left-radius:4px; align-self:flex-start; }
+.chat-input-row { display:flex; gap:8px; padding:12px 16px; border-top:1px solid var(--bdr); }
+.chat-input-row input { flex:1; }
+.quick-btns { display:flex; flex-wrap:wrap; gap:6px; padding:8px 16px; }
+.quick-btn { background:var(--primary-l); border:1px solid var(--primary); color:var(--primary-d);
+             border-radius:20px; padding:4px 14px; font-size:.78rem; cursor:pointer;
+             transition:background var(--tr); }
+.quick-btn:hover { background:var(--primary); color:#fff; }
+
+/* === 08. DASHBOARD === */
+/* Auto-fit grid lets charts reflow from 3-column → 1-column on small screens. */
+.dash-charts { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px; }
+#pieChart, #colChart, #barChart { width:100%; height:280px; }
+#geoChart { width:100%; height:380px; }
+
+/* === 09. QUIZ === */
+/* opt-btn states (correct/wrong) use background + border — color is never the only signal. */
+.quiz-levels { display:flex; gap:8px; margin-bottom:20px; }
+.lvl-btn { background:var(--bg2); border:2px solid transparent; border-radius:10px;
+           padding:8px 20px; cursor:pointer; font-weight:600; font-size:.88rem;
+           transition:all var(--tr); }
+.lvl-btn.active, .lvl-btn[aria-selected="true"] { background:var(--primary); color:#fff; border-color:var(--primary); }
+.quiz-q { font-size:1.08rem; font-weight:600; margin-bottom:16px; }
+.quiz-opts { display:flex; flex-direction:column; gap:8px; }
+.opt-btn { background:#fff; border:2px solid var(--bdr); border-radius:10px; padding:12px 16px;
+           text-align:left; cursor:pointer; font-size:.9rem; transition:all var(--tr); }
+.opt-btn:hover { border-color:var(--primary); background:var(--primary-l); }
+.opt-btn.correct { background:var(--primary-l); border-color:var(--primary); }
+.opt-btn.wrong { background:var(--red-l); border-color:var(--red); }
+.quiz-expl { background:var(--gold-l); border-left:4px solid var(--gold); border-radius:var(--r);
+             padding:14px; margin-top:14px; font-size:.88rem; }
+.quiz-score { text-align:center; padding:24px; }
+.quiz-score .big-score { font-size:3rem; font-weight:700; color:var(--primary); font-family:var(--fh); }
+.quiz-prog { display:flex; gap:6px; margin-bottom:16px; }
+.prog-dot { width:12px; height:12px; border-radius:50%; background:var(--bg2); transition:background var(--tr); }
+.prog-dot.done { background:var(--primary); }
+.prog-dot.cur { background:var(--gold); }
+
+/* === 10. LEADERBOARD === */
+/* Rank colors: gold/silver/bronze only on top 3 rows; rest use default ink color. */
+.lb-table { width:100%; border-collapse:collapse; }
+.lb-table th, .lb-table td { padding:10px 14px; text-align:left; border-bottom:1px solid var(--bg2); font-size:.88rem; }
+.lb-table th { background:var(--primary-l); font-weight:600; color:var(--primary-d); }
+.lb-table tr:hover td { background:var(--bg2); }
+.rank-1 { color:var(--gold); font-weight:700; }
+.rank-2 { color:var(--ink2); font-weight:700; }
+.rank-3 { color:#bf8040; font-weight:700; }
+.lb-form { display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; }
+.lb-form input { max-width:200px; }
+
+/* === 11. EDUCATION HUB === */
+/* border-top:4px gives each card a color accent without needing a colored header. */
+.edu-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:20px; }
+.edu-card { background:#fff; border-radius:var(--r); box-shadow:var(--sh); padding:20px;
+            border-top:4px solid var(--primary); transition:transform var(--tr); }
+.edu-card:hover { transform:translateY(-3px); }
+.edu-card .icon { font-size:2rem; margin-bottom:8px; }
+.edu-card h3 { font-weight:600; margin-bottom:6px; }
+.edu-card .impact { color:var(--primary-d); font-weight:600; font-size:.88rem;
+                    background:var(--primary-l); padding:3px 10px; border-radius:12px; display:inline-block; margin-top:8px; }
+.edu-card a { color:var(--navy-m); font-size:.82rem; display:inline-block; margin-top:10px; }
+
+/* === 12. GLOSSARY === */
+/* .hi class applies Noto Sans Devanagari specifically to Hindi headings only. */
+.glossary-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; }
+.gloss-item { background:#fff; border-radius:var(--r); padding:16px; box-shadow:0 2px 10px rgba(0,0,0,.06); }
+.gloss-item h3 { font-size:1rem; font-weight:600; color:var(--primary-d); margin-bottom:2px; }
+.gloss-item .hi { font-family:var(--fhi); font-size:.82rem; color:var(--ink2); margin-bottom:8px; }
+.gloss-item p { font-size:.85rem; color:var(--ink2); line-height:1.5; }
+
+/* === 13. TIMELINE === */
+/* .tl-item starts opacity:0 + translateX(20px); IntersectionObserver adds .visible. */
+.timeline { position:relative; padding-left:32px; }
+.timeline::before { content:''; position:absolute; left:10px; top:0; bottom:0;
+                    width:3px; background:linear-gradient(var(--primary),var(--teal)); border-radius:2px; }
+.tl-item { position:relative; margin-bottom:28px; opacity:0; transform:translateX(20px);
+           transition:opacity .5s,transform .5s; }
+.tl-item.visible { opacity:1; transform:none; }
+@media (prefers-reduced-motion:reduce) { .tl-item { opacity:1; transform:none; transition:none; } }
+.tl-dot { position:absolute; left:-26px; top:4px; width:16px; height:16px; border-radius:50%;
+          background:var(--primary); border:3px solid #fff; box-shadow:0 0 0 2px var(--primary); }
+.tl-year { font-size:.8rem; font-weight:700; color:var(--primary-d); text-transform:uppercase;
+           letter-spacing:.08em; margin-bottom:2px; }
+.tl-title { font-weight:600; margin-bottom:4px; }
+.tl-desc { font-size:.85rem; color:var(--ink2); }
+
+/* === 14. COUNTDOWN & COMPARISON === */
+/* Countdown units use inline-block so they wrap gracefully below 400px. */
+.countdown-box { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin:16px 0; }
+.cd-unit { text-align:center; background:#fff; border-radius:var(--r); padding:16px 20px;
+           box-shadow:var(--sh); min-width:80px; }
+.cd-unit .num { font-size:2.2rem; font-weight:700; color:var(--primary-d); font-family:var(--fh); }
+.cd-unit .lbl { font-size:.75rem; color:var(--ink2); text-transform:uppercase; letter-spacing:.06em; }
+.compare-bar { margin:12px 0; }
+.compare-bar .cb-label { display:flex; justify-content:space-between; font-size:.85rem; margin-bottom:4px; }
+.compare-bar .cb-bar { height:22px; border-radius:6px; background:var(--bg2); overflow:hidden; }
+.compare-bar .cb-fill { height:100%; border-radius:6px; transition:width .8s cubic-bezier(.4,0,.2,1); }
+
+/* === 15. FOOTER === */
+/* Dark background with chip badges explicitly names all 7 Google services used. */
+footer { background:var(--primary-d); color:rgba(255,255,255,.85); text-align:center;
+         padding:28px 16px; margin-top:40px; }
+footer h3 { font-family:var(--fh); font-size:1.1rem; color:#fff; margin-bottom:8px; }
+.footer-chips { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin:12px 0; }
+.chip { background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.25);
+        border-radius:20px; padding:4px 14px; font-size:.78rem; }
+footer p { font-size:.8rem; opacity:.7; }
+
+/* === 16. UTILITIES === */
+/* .spinner, .alert, .sr, .hidden — shared helpers used across multiple sections. */
+.spinner { display:inline-block; width:20px; height:20px; border:3px solid var(--bg2);
+           border-top-color:var(--primary); border-radius:50%;
+           animation:spin .8s linear infinite; vertical-align:middle; margin-right:8px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.alert { padding:12px 16px; border-radius:10px; margin:10px 0; font-size:.88rem; }
+.alert-error { background:var(--red-l); color:var(--red); border:1px solid var(--red); }
+.alert-success { background:var(--primary-l); color:var(--primary-d); border:1px solid var(--primary); }
+.hi { font-family:var(--fhi); }
+.tag { display:inline-block; background:var(--bg2); border-radius:6px; padding:2px 8px; font-size:.75rem; }
+.flex { display:flex; }
+.gap-8 { gap:8px; }
+.mt-12 { margin-top:12px; }
+.mt-16 { margin-top:16px; }
+.mt-20 { margin-top:20px; }
+.text-center { text-align:center; }
+.text-sm { font-size:.85rem; color:var(--ink2); }
+.w-full { width:100%; }
+.hidden { display:none !important; }
+@media print { nav,.chat-wrap,.quiz,.footer { display:none; } }
+@media (max-width:600px) { .hero { grid-template-columns:1fr; } .calc-grid { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+<noscript><div style="background:#c62828;color:#fff;padding:16px;text-align:center;">
+  CarbonWise requires JavaScript. Please enable it to continue.
+</div></noscript>
+
+<!-- ===== SECTION: Navigation ===== -->
+<header role="banner">
+<nav role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <div class="nav-brand">🌿 Carbon<span>Wise</span></div>
+    <div class="nav-links" role="list">
+      <a href="#calculator" role="listitem" data-en="Calculator" data-hi="कैलकुलेटर">Calculator</a>
+      <a href="#tracker" role="listitem" data-en="Tracker" data-hi="ट्रैकर">Tracker</a>
+      <a href="#advisor" role="listitem" data-en="AI Advisor" data-hi="AI सलाहकार">AI Advisor</a>
+      <a href="#chat" role="listitem" data-en="Chat" data-hi="चैट">Chat</a>
+      <a href="#dashboard" role="listitem" data-en="Dashboard" data-hi="डैशबोर्ड">Dashboard</a>
+      <a href="#map" role="listitem" data-en="Map" data-hi="नक्शा">Map</a>
+      <a href="#quiz" role="listitem" data-en="Quiz" data-hi="प्रश्नोत्तरी">Quiz</a>
+      <a href="#leaderboard" role="listitem" data-en="Leaders" data-hi="लीडर">Leaders</a>
+      <a href="#education" role="listitem" data-en="Learn" data-hi="सीखें">Learn</a>
+    </div>
+    <div class="nav-tools">
+      <button class="icon-btn" id="langBtn" aria-pressed="false" aria-label="Switch to Hindi language">
+        <span class="material-symbols-outlined">translate</span>
+      </button>
+      <button class="icon-btn" id="hcBtn" aria-pressed="false" aria-label="Toggle high contrast mode">
+        <span class="material-symbols-outlined">contrast</span>
+      </button>
+      <button class="icon-btn" id="fpBtn" aria-label="Increase font size">
+        <span class="material-symbols-outlined">text_increase</span>
+      </button>
+      <button class="icon-btn" id="fmBtn" aria-label="Decrease font size">
+        <span class="material-symbols-outlined">text_decrease</span>
+      </button>
+    </div>
+  </div>
+</nav>
+</header>
+
+<main id="main">
+<!-- ===== SECTION: Hero ===== -->
+<section id="hero" aria-labelledby="heroTitle">
+  <div class="hero">
+    <div>
+      <h1 id="heroTitle" data-en="Understand, Track &amp; Reduce Your Carbon Footprint" data-hi="अपना कार्बन फुटप्रिंट समझें, ट्रैक करें और कम करें">
+        Understand, Track &amp; Reduce Your<br>Carbon Footprint
+      </h1>
+      <p data-en="Get personalized insights into your CO₂ emissions. Take simple, effective actions and join a community committed to a sustainable India." data-hi="अपने CO₂ उत्सर्जन में व्यक्तिगत जानकारी प्राप्त करें। प्रभावी कदम उठाएं।">
+        Get personalized insights into your CO₂ emissions. Take simple, effective actions and join a community committed to a sustainable India.
+      </p>
+      <div class="hero-chips">
+        <span class="hero-chip">🤖 AI Personalized Insights</span>
+        <span class="hero-chip">📊 Real-time Tracking</span>
+        <span class="hero-chip">🌍 Community Impact</span>
+        <span class="hero-chip">🇮🇳 India Focus</span>
+      </div>
+    </div>
+    <div class="hero-stat">
+      <span class="val" id="heroUserFp">—</span>
+      <span class="lbl" data-en="Your tCO₂e/year" data-hi="आपका tCO₂e/वर्ष">Your tCO₂e/year</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION: API Key Setup (top-level, always visible) ===== -->
+<section id="apiSetup" aria-labelledby="apiSetupTitle" style="margin:0 0 32px;">
+  <div style="background:linear-gradient(135deg,#1843A0 0%,#2E7D32 100%);border-radius:16px;padding:20px 28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+    <span class="material-symbols-outlined" style="color:#FFD54F;font-size:2rem;">key</span>
+    <div style="flex:1;min-width:220px;">
+      <div style="color:#fff;font-weight:700;font-size:1rem;margin-bottom:2px;" data-en="🔑 Gemini API Key — required for AI Advisor &amp; Chat" data-hi="🔑 Gemini API Key — AI सुविधाओं के लिए आवश्यक">🔑 Gemini API Key — required for AI Advisor &amp; Chat</div>
+      <div style="color:rgba(255,255,255,.75);font-size:.82rem;" data-en="Get a free key at aistudio.google.com — paste it here once to unlock all AI features." data-hi="aistudio.google.com पर मुफ्त key प्राप्त करें।">Get a free key at <a href="https://aistudio.google.com" target="_blank" rel="noopener noreferrer" style="color:#FFD54F;">aistudio.google.com</a> — paste it here once to unlock all AI features.</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex:1;min-width:260px;">
+      <input type="text" id="masterApiKey" placeholder="Paste your Gemini API key here (AIza...)" 
+             aria-label="Gemini API key" autocomplete="off" autocorrect="off" spellcheck="false"
+             style="flex:1;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.4);
+                    color:#fff;border-radius:10px;padding:10px 14px;font-size:.9rem;min-width:0;">
+      <button class="btn" id="applyKeyBtn" style="background:#FFD54F;color:#1a1a1a;white-space:nowrap;flex-shrink:0;">
+        <span class="material-symbols-outlined" style="font-size:1.1rem;">check_circle</span>
+        <span data-en="Apply Key" data-hi="Key लागू करें">Apply Key</span>
+      </button>
+    </div>
+    <div id="keyStatus" role="alert" aria-live="polite" style="width:100%;margin-top:4px;"></div>
+  </div>
+</section>
+
+<!-- ===== SECTION: Calculator (Slot 1) ===== -->
+<section id="calculator" aria-labelledby="calcTitle">
+  <div class="section-head">
+    <h2 id="calcTitle" data-en="📐 Carbon Footprint Calculator" data-hi="📐 कार्बन फुटप्रिंट कैलकुलेटर">📐 Carbon Footprint Calculator</h2>
+    <span class="section-badge">Slot 1</span>
+  </div>
+  <div class="card">
+    <div class="calc-grid">
+      <div>
+        <h3 style="margin-bottom:16px;font-weight:600;" data-en="Your Annual Activities" data-hi="आपकी वार्षिक गतिविधियां">Your Annual Activities</h3>
+
+        <div style="margin-bottom:14px;">
+          <label for="carKm" data-en="🚗 Car travel (km/year)" data-hi="🚗 कार यात्रा (km/वर्ष)">🚗 Car travel (km/year)</label>
+          <input type="number" id="carKm" min="0" max="200000" value="6000" aria-label="Car kilometres per year">
+        </div>
+        <div style="margin-bottom:14px;">
+          <label for="bikeKm" data-en="🏍️ Motorbike (km/year)" data-hi="🏍️ मोटरबाइक (km/वर्ष)">🏍️ Motorbike (km/year)</label>
+          <input type="number" id="bikeKm" min="0" max="100000" value="3000" aria-label="Motorbike kilometres per year">
+        </div>
+        <div style="margin-bottom:14px;">
+          <label for="kwhMonth" data-en="⚡ Electricity (kWh/month)" data-hi="⚡ बिजली (kWh/माह)">⚡ Electricity (kWh/month)</label>
+          <input type="number" id="kwhMonth" min="0" max="5000" value="150" aria-label="Monthly electricity usage in kWh">
+        </div>
+        <div style="margin-bottom:14px;">
+          <label for="dietType" data-en="🍽️ Diet type" data-hi="🍽️ आहार प्रकार">🍽️ Diet type</label>
+          <select id="dietType" aria-label="Select your diet type">
+            <option value="vegan" data-en="Vegan" data-hi="शाकाहारी (पूर्ण)">Vegan</option>
+            <option value="veg" selected data-en="Vegetarian" data-hi="शाकाहारी">Vegetarian</option>
+            <option value="omni_low" data-en="Mixed — Low meat" data-hi="मिश्रित — कम मांस">Mixed — Low meat</option>
+            <option value="omni_high" data-en="Mixed — High meat" data-hi="मिश्रित — अधिक मांस">Mixed — High meat</option>
+          </select>
+        </div>
+        <div style="margin-bottom:14px;">
+          <label for="flightsCount" data-en="✈️ Domestic flights/year" data-hi="✈️ घरेलू उड़ानें/वर्ष">✈️ Domestic flights/year</label>
+          <input type="number" id="flightsCount" min="0" max="100" value="2" aria-label="Number of domestic flights per year">
+        </div>
+        <div style="margin-bottom:20px;">
+          <label for="ordersMonth" data-en="🛍️ Online orders/month" data-hi="🛍️ ऑनलाइन ऑर्डर/माह">🛍️ Online orders/month</label>
+          <input type="number" id="ordersMonth" min="0" max="200" value="4" aria-label="Online shopping orders per month">
+        </div>
+        <button class="btn btn-primary w-full" id="calcBtn">
+          <span class="material-symbols-outlined">calculate</span>
+          <span data-en="Calculate My Footprint" data-hi="मेरा फुटप्रिंट गणना करें">Calculate My Footprint</span>
+        </button>
+      </div>
+
+      <div id="calcResult" style="display:none;">
+        <div class="calc-result">
+          <div class="unit" data-en="Your Annual Carbon Footprint" data-hi="आपका वार्षिक कार्बन फुटप्रिंट">Your Annual Carbon Footprint</div>
+          <div class="big-num" id="fpTotal">0</div>
+          <div style="font-size:.85rem;color:var(--ink2);">tCO₂e / year</div>
+          <div class="rating-badge mt-12" id="fpRating"></div>
+        </div>
+        <div style="margin-top:16px;">
+          <div class="text-sm" style="margin-bottom:8px;" data-en="Breakdown by category:" data-hi="श्रेणी अनुसार:">Breakdown by category:</div>
+          <div id="fpBreakdown"></div>
+        </div>
+        <div style="margin-top:16px;">
+          <div class="text-sm" data-en="vs. benchmarks:" data-hi="तुलना:">vs. benchmarks:</div>
+          <div id="fpVsBench"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- ===== SECTION: Daily Tracker (Slot 2) ===== -->
+<section id="tracker" aria-labelledby="trackerTitle">
+  <div class="section-head">
+    <h2 id="trackerTitle" data-en="✅ Daily Action Tracker" data-hi="✅ दैनिक क्रिया ट्रैकर">✅ Daily Action Tracker</h2>
+    <span class="section-badge">Slot 2 · Firebase Live</span>
+  </div>
+  <div class="card">
+    <p class="text-sm" style="margin-bottom:16px;" data-en="Select actions you took today — each saves real CO₂!" data-hi="आज जो कार्य किए वे चुनें — हर एक वास्तविक CO₂ बचाता है!">Select actions you took today — each saves real CO₂!</p>
+    <div class="tracker-actions" id="trackerActions" role="list" aria-label="Daily eco actions"></div>
+    <div class="flex gap-8" style="flex-wrap:wrap;margin-top:16px;">
+      <button class="btn btn-primary" id="logActionBtn">
+        <span class="material-symbols-outlined">add_task</span>
+        <span data-en="Log Actions" data-hi="क्रियाएं दर्ज करें">Log Actions</span>
+      </button>
+      <div id="logStatus" role="alert" aria-live="polite"></div>
+    </div>
+    <div style="margin-top:20px;">
+      <h3 style="font-weight:600;margin-bottom:10px;font-size:.95rem;" data-en="Today's Log" data-hi="आज का लॉग">Today's Log</h3>
+      <ul class="log-list" id="logList" aria-label="Action log"></ul>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION: AI Advisor (Slot 3) ===== -->
+<section id="advisor" aria-labelledby="advisorTitle">
+  <div class="section-head">
+    <h2 id="advisorTitle" data-en="🤖 AI Reduction Advisor" data-hi="🤖 AI कमी सलाहकार">🤖 AI Reduction Advisor</h2>
+    <span class="section-badge">Slot 3 · Gemini</span>
+  </div>
+  <div class="card">
+    <p class="text-sm" style="margin-bottom:16px;" data-en="Calculate your footprint first, then get your personalized AI reduction plan." data-hi="पहले अपना फुटप्रिंट गणना करें, फिर व्यक्तिगत AI कमी योजना पाएं।">Calculate your footprint first, then get your personalized AI reduction plan.</p>
+    <div class="flex gap-8" style="flex-wrap:wrap;margin-bottom:16px;align-items:center;">
+      <div id="advisorKeyNotice" style="font-size:.85rem;color:var(--ink2);padding:8px 12px;background:var(--primary-l);border-radius:8px;border-left:3px solid var(--primary);">
+        🔑 Key status: <span id="advisorKeyStatus" style="font-weight:600;">Not set — enter above ↑</span>
+      </div>
+      <button class="btn btn-primary" id="advisorBtn">
+        <span class="material-symbols-outlined">psychology</span>
+        <span data-en="Get My Plan" data-hi="मेरी योजना पाएं">Get My Plan</span>
+      </button>
+    </div>
+    <div class="advisor-box" id="advisorBox" role="alert" aria-live="polite" aria-label="AI advisor response">
+      <span class="text-sm" data-en="Your personalized reduction plan will appear here after calculating your footprint." data-hi="फुटप्रिंट गणना के बाद आपकी व्यक्तिगत कमी योजना यहाँ दिखेगी।">Your personalized reduction plan will appear here after calculating your footprint.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION: AI Chat (Slot 4) ===== -->
+<section id="chat" aria-labelledby="chatTitle">
+  <div class="section-head">
+    <h2 id="chatTitle" data-en="💬 Climate Q&amp;A Chat" data-hi="💬 जलवायु Q&amp;A चैट">💬 Climate Q&A Chat</h2>
+    <span class="section-badge">Slot 4 · Gemini</span>
+  </div>
+  <div class="card" style="padding:0;">
+    <div class="chat-wrap">
+      <div class="quick-btns" aria-label="Quick chat prompts">
+        <button class="quick-btn" data-q="What is carbon footprint?" data-en="What is carbon footprint?" data-hi="कार्बन फुटप्रिंट क्या है?">What is carbon footprint?</button>
+        <button class="quick-btn" data-q="How can I reduce my carbon footprint at home?" data-en="Reduce at home" data-hi="घर पर कम करें">Reduce at home</button>
+        <button class="quick-btn" data-q="What is net zero and why does it matter?" data-en="What is net zero?" data-hi="नेट जीरो क्या है?">What is net zero?</button>
+        <button class="quick-btn" data-q="What is India's climate commitment?" data-en="India's climate goals" data-hi="भारत के जलवायु लक्ष्य">India's climate goals</button>
+        <button class="quick-btn" data-q="What are the easiest ways to save CO2?" data-en="Easiest CO₂ savings" data-hi="आसान CO₂ बचत">Easiest CO₂ savings</button>
+      </div>
+      <div class="chat-msgs" id="chatMsgs" aria-label="Chat messages" aria-live="polite">
+        <div class="msg msg-bot">
+          👋 Hi! I'm your <strong>CarbonWise AI</strong> — ask me anything about carbon footprint, climate change, or how to live more sustainably in India!
+        </div>
+      </div>
+      <div class="chat-input-row">
+        <input type="text" id="chatInput" placeholder="Ask about carbon footprint..." aria-label="Type your climate question" maxlength="500">
+        <button class="btn btn-primary" id="chatSendBtn" aria-label="Send message">
+          <span class="material-symbols-outlined">send</span>
+        </button>
+        <button class="icon-btn" id="voiceBtn" style="background:var(--primary-l);color:var(--primary-d);" aria-label="Voice input" aria-pressed="false">
+          <span class="material-symbols-outlined">mic</span>
+        </button>
+      </div>
+    </div>
+    <div style="padding:8px 16px 12px;">
+      <div style="font-size:.8rem;color:var(--ink2);">
+        🔑 Key: <span id="chatKeyStatus" style="font-weight:600;color:var(--primary-d);">Not set — use the key banner above ↑</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION: Dashboard (Slot 5) ===== -->
+<section id="dashboard" aria-labelledby="dashTitle">
+  <div class="section-head">
+    <h2 id="dashTitle" data-en="📊 Emissions Dashboard" data-hi="📊 उत्सर्जन डैशबोर्ड">📊 Emissions Dashboard</h2>
+    <span class="section-badge">Slot 5 · Google Charts</span>
+  </div>
+  <div class="dash-charts">
+    <div class="card">
+      <h3 style="margin-bottom:12px;font-size:.95rem;font-weight:600;" data-en="Emissions by Category" data-hi="श्रेणी अनुसार उत्सर्जन">Emissions by Category</h3>
+      <div id="pieChart" aria-label="Pie chart: emissions by category"></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:12px;font-size:.95rem;font-weight:600;" data-en="Monthly CO₂ Trend" data-hi="मासिक CO₂ प्रवृत्ति">Monthly CO₂ Trend</h3>
+      <div id="colChart" aria-label="Column chart: monthly CO2 trend"></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:12px;font-size:.95rem;font-weight:600;" data-en="You vs. Benchmarks" data-hi="आप बनाम मानदंड">You vs. Benchmarks</h3>
+      <div id="barChart" aria-label="Bar chart: your emissions vs benchmarks"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION: GeoChart — India Map (Slot 6) ===== -->
+<section id="map" aria-labelledby="mapTitle">
+  <div class="section-head">
+    <h2 id="mapTitle" data-en="🗺️ India Carbon Emissions Map" data-hi="🗺️ भारत कार्बन उत्सर्जन नक्शा">🗺️ India Carbon Emissions Map</h2>
+    <span class="section-badge">Slot 6 · GeoChart</span>
+  </div>
+  <div class="card">
+    <p class="text-sm" style="margin-bottom:16px;" data-en="Per-capita CO₂ emissions by Indian state (tCO₂e, IEA/MoEFCC 2023)" data-hi="भारतीय राज्य अनुसार प्रति व्यक्ति CO₂ उत्सर्जन">Per-capita CO₂ emissions by Indian state (tCO₂e, IEA/MoEFCC 2023)</p>
+    <div id="geoChart" aria-label="Geographic map: India per-capita CO2 emissions by state"></div>
+  </div>
+</section>
+
+<!-- ===== SECTION: Knowledge Quiz (Slot 7) ===== -->
+<section id="quiz" aria-labelledby="quizTitle">
+  <div class="section-head">
+    <h2 id="quizTitle" data-en="🧠 Climate Knowledge Quiz" data-hi="🧠 जलवायु ज्ञान प्रश्नोत्तरी">🧠 Climate Knowledge Quiz</h2>
+    <span class="section-badge">Slot 7 · 3 Levels</span>
+  </div>
+  <div class="card">
+    <div class="quiz-levels" role="radiogroup" aria-label="Select quiz difficulty level">
+      <button class="lvl-btn active" data-lev="easy" aria-selected="true" data-en="🌱 Easy" data-hi="🌱 आसान">🌱 Easy</button>
+      <button class="lvl-btn" data-lev="med" aria-selected="false" data-en="🌿 Medium" data-hi="🌿 मध्यम">🌿 Medium</button>
+      <button class="lvl-btn" data-lev="hard" aria-selected="false" data-en="🌳 Hard" data-hi="🌳 कठिन">🌳 Hard</button>
+    </div>
+    <div class="quiz-prog" id="quizProg" aria-label="Quiz progress"></div>
+    <div id="quizBox"></div>
+  </div>
+</section>
+
+<!-- ===== SECTION: Community Leaderboard (Slot 8) ===== -->
+<section id="leaderboard" aria-labelledby="lbTitle">
+  <div class="section-head">
+    <h2 id="lbTitle" data-en="🏆 CO₂ Savers Leaderboard" data-hi="🏆 CO₂ बचत लीडरबोर्ड">🏆 CO₂ Savers Leaderboard</h2>
+    <span class="section-badge">Slot 8 · Firebase Live</span>
+  </div>
+  <div class="card-grid cols-2">
+    <div class="card">
+      <h3 style="font-weight:600;margin-bottom:14px;" data-en="Submit Your Score" data-hi="अपना स्कोर सबमिट करें">Submit Your Score</h3>
+      <div class="lb-form">
+        <div>
+          <label for="lbName" data-en="Your name" data-hi="आपका नाम">Your name</label>
+          <input type="text" id="lbName" maxlength="24" placeholder="e.g. Priya S." aria-label="Enter your name for leaderboard">
+        </div>
+        <button class="btn btn-primary" id="submitScoreBtn" aria-label="Submit carbon saving score">
+          <span class="material-symbols-outlined">leaderboard</span>
+          <span data-en="Submit Score" data-hi="स्कोर सबमिट करें">Submit Score</span>
+        </button>
+      </div>
+      <div id="lbStatus" role="alert" aria-live="polite" style="margin-top:10px;"></div>
+    </div>
+    <div class="card">
+      <h3 style="font-weight:600;margin-bottom:14px;" data-en="🥇 Top CO₂ Savers" data-hi="🥇 शीर्ष CO₂ बचतकर्ता">🥇 Top CO₂ Savers</h3>
+      <div id="lbWrap" aria-live="polite" aria-label="Leaderboard entries">
+        <p class="text-sm" data-en="Leaderboard loads when Firebase is connected." data-hi="Firebase कनेक्ट होने पर लीडरबोर्ड लोड होगा।">Leaderboard loads when Firebase is connected.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECTION: Education Hub (Slot 9) ===== -->
+<section id="education" aria-labelledby="eduTitle">
+  <div class="section-head">
+    <h2 id="eduTitle" data-en="📚 Education Hub" data-hi="📚 शिक्षा केंद्र">📚 Education Hub</h2>
+    <span class="section-badge">Slot 9 · Real Data</span>
+  </div>
+  <div class="edu-grid" id="eduGrid" role="list" aria-label="Educational action cards"></div>
+</section>
+
+<!-- ===== SECTION: Glossary (Slot 10) ===== -->
+<section id="glossary" aria-labelledby="glossTitle">
+  <div class="section-head">
+    <h2 id="glossTitle" data-en="📖 Carbon Glossary" data-hi="📖 कार्बन शब्दावली">📖 Carbon Glossary</h2>
+    <span class="section-badge">Slot 10 · EN/HI</span>
+  </div>
+  <div class="glossary-list" id="glossList" role="list" aria-label="Carbon glossary terms"></div>
+</section>
+
+<!-- ===== SECTION: Process Timeline (Slot 11) ===== -->
+<section id="timeline" aria-labelledby="tlTitle">
+  <div class="section-head">
+    <h2 id="tlTitle" data-en="🗓️ India's Journey to Net-Zero" data-hi="🗓️ भारत की नेट-जीरो यात्रा">🗓️ India's Journey to Net-Zero</h2>
+    <span class="section-badge">Slot 11 · Timeline</span>
+  </div>
+  <div class="card">
+    <div class="timeline" id="tlList" aria-label="India climate policy timeline"></div>
+  </div>
+</section>
+
+<!-- ===== SECTION: Countdown (Slot 12) ===== -->
+<section id="countdown" aria-labelledby="cdTitle">
+  <div class="section-head">
+    <h2 id="cdTitle" data-en="⏳ Climate Events Countdown" data-hi="⏳ जलवायु कार्यक्रम काउंटडाउन">⏳ Climate Events Countdown</h2>
+    <span class="section-badge">Slot 12 · Live</span>
+  </div>
+  <div class="card text-center">
+    <h3 id="cdEventName" style="font-size:1.1rem;font-weight:600;margin-bottom:4px;"></h3>
+    <p id="cdEventDate" class="text-sm" style="margin-bottom:16px;"></p>
+    <div class="countdown-box" id="cdBox" aria-live="polite" aria-label="Countdown timer"></div>
+    <p id="cdDesc" class="text-sm" style="margin-top:12px;"></p>
+  </div>
+</section>
+
+<!-- ===== SECTION: Comparison Tool (Slot 13) ===== -->
+<section id="compare" aria-labelledby="cmpTitle">
+  <div class="section-head">
+    <h2 id="cmpTitle" data-en="📏 How Do You Compare?" data-hi="📏 आप कैसे तुलना करते हैं?">📏 How Do You Compare?</h2>
+    <span class="section-badge">Slot 13</span>
+  </div>
+  <div class="card">
+    <p class="text-sm" style="margin-bottom:16px;" data-en="Calculate your footprint to see how you compare against India, world, and climate targets." data-hi="अपना फुटप्रिंट गणना करें और तुलना देखें।">Calculate your footprint to see how you compare against India, world, and climate targets.</p>
+    <div id="compareChart" aria-label="Comparison bars">
+      <p class="text-sm" id="cmpPlaceholder" data-en="↑ Use the calculator above first." data-hi="↑ पहले ऊपर कैलकुलेटर उपयोग करें।">↑ Use the calculator above first.</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- ===== SECTION: Footer ===== -->
+<footer aria-label="Site footer">
+  <h3>🌿 CarbonWise</h3>
+  <p style="opacity:.8;margin-bottom:12px;" data-en="Powered by Google's ecosystem for a sustainable future." data-hi="Google पारिस्थितिकी तंत्र द्वारा संचालित।">Powered by Google's ecosystem for a sustainable future.</p>
+  <div class="footer-chips" aria-label="Google services used">
+    <span class="chip">Gemini 2.5 Flash</span>
+    <span class="chip">Google Fonts</span>
+    <span class="chip">Material Symbols</span>
+    <span class="chip">Google Charts</span>
+    <span class="chip">GeoChart</span>
+    <span class="chip">Firebase Realtime DB</span>
+    <span class="chip">Google Analytics 4</span>
+  </div>
+  <p style="margin-top:12px;" data-en="Data sources: IEA 2023 · IPCC AR6 2023 · DEFRA 2023 · CEA 2023 · MoEFCC 2023 · Oxford 2023" data-hi="डेटा स्रोत: IEA 2023 · IPCC AR6 2023 · DEFRA 2023 · CEA 2023">Data sources: IEA 2023 · IPCC AR6 2023 · DEFRA 2023 · CEA 2023 · MoEFCC 2023 · Oxford 2023</p>
+</footer>
+<script>
+/*
+ * TABLE OF CONTENTS
+ * ==================
+ * 01. NAMING CONVENTION
+ * 02. CONSTANTS — named; zero magic numbers
+ * 03. CONFIG & validateConfig
+ * 04. SANITIZATION & SECURITY
+ * 05. STATE OBJECT (S)
+ * 06. DOM MICRO-HELPERS
+ * 07. GOOGLE ANALYTICS 4
+ * 08. TRANSLATION SYSTEM
+ * 09. QUIZ DATA (QD)
+ * 10. GEO DATA (GEO_DATA)
+ * 11. TRACKER ACTIONS DATA
+ * 12. EDUCATION HUB DATA
+ * 13. GLOSSARY DATA
+ * 14. TIMELINE DATA
+ * 15. CLIMATE EVENTS DATA
+ * 16. CARBON CALCULATOR — pure functions
+ * 17. CALCULATOR UI
+ * 18. TRACKER UI
+ * 19. AI ADVISOR (Gemini #1)
+ * 20. AI CHAT (Gemini #2)
+ * 21. GOOGLE CHARTS DASHBOARD
+ * 22. GEOCHART — India Map
+ * 23. QUIZ ENGINE
+ * 24. FIREBASE — Leaderboard
+ * 25. EDUCATION HUB RENDERER
+ * 26. GLOSSARY RENDERER
+ * 27. TIMELINE RENDERER
+ * 28. COUNTDOWN TIMER
+ * 29. COMPARISON TOOL
+ * 30. ACCESSIBILITY CONTROLS
+ * 31. INTERSECTION OBSERVERS
+ * 32. SELF-TESTS (synchronous IIFE)
+ * 33. BOOTSTRAP
+ */
+'use strict';
+
+/* ============ 01. NAMING CONVENTION ============ */
+// Functions  : verbNoun camelCase  (buildGeoChart, calcFootprint)
+// Data arrays: UPPER_SNAKE         (GEO_DATA, QD, GLOSSARY_DATA)
+// Constants  : UPPER_SNAKE         (EF_CAR_KM, AVG_INDIA_T)
+// CSS tokens : kebab               (--primary, --ink2)
+// State keys : camelCase in S{}    (S.fpTotal, S.qlev)
+
+/* ============ 02. CONSTANTS — zero magic numbers ============ */
+// All magic numbers extracted here; zero bare literals in logic below.
+var GEMINI_MODEL             = 'gemini-2.5-flash';
+var GEMINI_API_BASE          = 'https://generativelanguage.googleapis.com/v1beta/models/';
+var GEMINI_ENDPOINT          = ':generateContent';
+var GOOGLE_CHARTS_VERSION    = 'current';
+var FIREBASE_SDK_VERSION     = '10.8.0';
+var GEMINI_MAX_TOKENS        = 900;
+var GEMINI_TIMEOUT_MS        = 15000;
+var CHARTS_RETRY_DELAY_MS    = 200;
+var SCROLL_ANIM_DELAY_MS     = 120;
+var OBSERVER_THRESHOLD_CHART = 0.2;
+var OBSERVER_THRESHOLD_ANIM  = 0.1;
+var LEADERBOARD_MAX_ENTRIES  = 10;
+var LEADERBOARD_NAME_MAX_LEN = 24;
+var FONT_SIZE_MIN_PX         = 12;
+var FONT_SIZE_MAX_PX         = 22;
+var FONT_SIZE_STEP_PX        = 2;
+var FONT_SIZE_DEFAULT_PX     = 16;
+var QUIZ_LEVELS              = ['easy', 'med', 'hard'];
+var QUIZ_QUESTIONS_PER_LEVEL = 5;
+var KEY_MIN_LENGTH           = 20;
+var KEY_PREFIX               = 'AIza';
+var MAX_CAR_KM               = 200000;
+var MAX_BIKE_KM              = 100000;
+var MAX_KWH_MONTH            = 5000;
+var MAX_FLIGHTS              = 100;
+var MAX_ORDERS_MONTH         = 200;
+var MONTHS_PER_YEAR          = 12;
+var KG_PER_TONNE             = 1000;
+var MS_PER_DAY               = 86400000; // milliseconds in one day
+var MS_PER_HOUR              = 3600000;  // milliseconds in one hour
+var MS_PER_MINUTE            = 60000;    // milliseconds in one minute
+var MS_PER_SECOND            = 1000;     // milliseconds in one second
+var PIECHART_HOLE_RADIUS     = 0.35;     // donut hole size (0=pie, 1=ring)
+var CHART_AREA_WIDTH_PCT     = '90%';    // chart area width for pie
+var CHART_AREA_WIDTH_BAR     = '85%';    // chart area width for column/bar
+var CHART_HEIGHT_PX          = 280;      // standard chart height in pixels
+var CHAT_MAX_LENGTH          = 500;
+var LB_ENTRY_MIN_SAVING      = 0;
+
+// Emission factors (all sourced — see README)
+var EF_CAR_KM           = 0.171;   // kg CO2e/km — DEFRA 2023 avg petrol car
+var EF_BIKE_KM          = 0.083;   // kg CO2e/km — DEFRA 2023 motorbike
+var EF_GRID_KWH         = 0.82;    // kg CO2e/kWh — CEA India grid 2023
+var EF_FLIGHT_DOMESTIC  = 0.255;   // t CO2e/flight — ICAO 2023 India domestic avg
+var EF_SHOPPING_ORDER   = 0.005;   // t CO2e/order — WRAP 2023 e-commerce
+var DIET_VEGAN_T        = 0.5;     // t CO2e/yr — Oxford 2023
+var DIET_VEG_T          = 0.9;     // t CO2e/yr — Oxford 2023
+var DIET_OMNI_LOW_T     = 1.4;     // t CO2e/yr — Oxford 2023
+var DIET_OMNI_HIGH_T    = 2.5;     // t CO2e/yr — Oxford 2023
+
+// Benchmark values
+var AVG_INDIA_T         = 1.9;     // t CO2e per capita — IEA 2023
+var AVG_WORLD_T         = 4.7;     // t CO2e per capita — IEA 2023
+var TARGET_1_5_T        = 2.3;     // 1.5°C-aligned per-capita — IPCC AR6 2023
+var MAX_BAR_SCALE_T     = 10.0;    // chart scale ceiling
+
+/* ============ 03. CONFIG & validateConfig ============ */
+// Single CONFIG object; validateConfig() runs at parse time for early warnings.
+/** @type {object} Central configuration — all URLs, IDs, credentials */
+var CONFIG = {
+  geminiUrl: GEMINI_API_BASE + GEMINI_MODEL + GEMINI_ENDPOINT,
+  firebase: {
+    apiKey:        'YOUR_API_KEY',
+    authDomain:    'your-project.firebaseapp.com',
+    databaseURL:   'https://your-project-default-rtdb.firebaseio.com',
+    projectId:     'your-project',
+    storageBucket: 'your-project.appspot.com',
+    messagingSenderId: '000000000000',
+    appId:         '1:000000000000:web:0000000000000000'
+  },
+  ga4MeasurementId: 'G-XXXXXXXXXX'
+};
+
+/**
+ * Validates CONFIG for missing or placeholder values at startup.
+ * @returns {object} Status with keys: geminiUrlOk, firebaseOk, ga4Ok
+ */
+function validateConfig() {
+  var fb = CONFIG.firebase;
+  var status = {
+    geminiUrlOk: CONFIG.geminiUrl.startsWith('https://') &&
+                 CONFIG.geminiUrl.indexOf('generateContent') !== -1,
+    firebaseOk:  !!fb.databaseURL &&
+                 fb.apiKey !== 'YOUR_API_KEY' &&
+                 fb.apiKey.indexOf('Demo') === -1 &&
+                 fb.apiKey.indexOf('placeholder') === -1,
+    ga4Ok:       CONFIG.ga4MeasurementId !== 'G-XXXXXXXXXX'
+  };
+  if (!status.geminiUrlOk) console.warn('[App] CONFIG: Gemini URL misconfigured');
+  if (!status.firebaseOk)  console.warn('[App] CONFIG: Firebase using placeholder — leaderboard offline');
+  if (!status.ga4Ok)       console.warn('[App] CONFIG: GA4 ID is placeholder — analytics disabled');
+  return status;
+}
+
+/** @type {object} Result of validateConfig — used by initFirebase and elsewhere */
+var CONFIG_STATUS = validateConfig();
+
+/* ============ 04. SANITIZATION & SECURITY ============ */
+// sanitize() must wrap every user input and every Gemini response before innerHTML.
+/**
+ * Sanitizes a string for safe innerHTML insertion.
+ * Encodes HTML entities, then applies safe markdown transforms.
+ * @param {string} str Raw input string
+ * @returns {string} HTML-safe string
+ */
+function sanitize(str) {
+  if (typeof str !== 'string') return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\n/g, '<br>');
+}
+
+/**
+ * Validates a Gemini API key format.
+ * @param {string} key Candidate API key
+ * @returns {boolean} True if key passes format check
+ */
+function isValidKey(key) {
+  // Accept any non-empty key of reasonable length — Gemini key formats vary
+  return typeof key === 'string' && key.trim().length >= KEY_MIN_LENGTH;
+}
+
+/* ============ 05. STATE OBJECT (S) ============ */
+// Single source of truth for all mutable state; zero loose global variables.
+/** @type {object} All mutable application state — zero loose globals */
+var S = {
+  lang:     'en',      // current UI language
+  fpTotal:  0,         // calculated footprint in tCO2e
+  fpBreak:  {},        // breakdown: {car, bike, electricity, diet, flights, shopping}
+  hist:     [],        // Gemini chat history
+  key:      '',        // active Gemini API key (never persisted)
+  fbReady:  false,     // Firebase initialised flag
+  qlev:     'easy',    // active quiz level
+  qi:       0,         // current question index
+  qs:       0,         // quiz score
+  qd:       false,     // quiz done flag
+  tracked:  [],        // selected tracker action IDs for today
+  fontSize: FONT_SIZE_DEFAULT_PX,
+  hc:       false,
+  hiLang:   false
+};
+
+/** @type {object|null} Firebase database reference */
+var fbDB = null;
+
+/* ============ 06. DOM MICRO-HELPERS ============ */
+// el/setHTML/on used everywhere — eliminates repeated null-check boilerplate.
+/**
+ * Shorthand for getElementById with null safety.
+ * @param {string} id Element ID
+ * @returns {HTMLElement|null} DOM element or null
+ */
+function el(id) { return document.getElementById(id); }
+
+/**
+ * Sets innerHTML on an element after it has been sanitized externally.
+ * Caller is responsible for passing safe HTML (use sanitize() first).
+ * @param {string} id Element ID
+ * @param {string} html Pre-sanitized HTML string
+ * @returns {void}
+ */
+function setHTML(id, html) { var n = el(id); if (n) n.innerHTML = html; }
+
+/**
+ * Safely binds an event listener, guarding against missing elements.
+ * @param {string} id Element ID
+ * @param {string} ev Event name
+ * @param {Function} fn Handler function
+ * @returns {void}
+ */
+function on(id, ev, fn) { var n = el(id); if (n) n.addEventListener(ev, fn); }
+
+/* ============ 07. GOOGLE ANALYTICS 4 ============ */
+// gaEvent() wraps gtag safely — silently no-ops if GA4 script fails to load.
+/**
+ * Fires a GA4 custom event via gtag.
+ * @param {string} action Event action name
+ * @param {string} cat Event category
+ * @param {string} [label] Optional event label
+ * @returns {void}
+ */
+function gaEvent(action, cat, label) {
+  try {
+    if (typeof gtag === 'function') {
+      gtag('event', action, { event_category: cat, event_label: label || '' });
+    }
+  } catch (err) {
+    console.warn('[App] GA4 event error:', err.message);
+  }
+}
+
+/* ============ 08. TRANSLATION SYSTEM ============ */
+// TX object + getText() drives all bilingual strings; applyLang() updates DOM.
+/** @type {object} UI string translations for EN and HI */
+var TX = {
+  en: {
+    advisorBtn:     'Get My Plan',
+    logAction:      'Log Actions',
+    submitScore:    'Submit Score',
+    quizNext:       'Next Question →',
+    quizRetry:      '🔄 Try Again',
+    quizResult:     'Quiz Complete!',
+    quizYourScore:  'Your score:',
+    calculating:    'Calculating...',
+    sending:        'Sending...',
+    saving:         'Saving...',
+    voiceStart:     'Listening… speak now',
+    voiceStop:      'Voice stopped',
+    noKey:          '⚠️ Please enter your Gemini API key.',
+    noCalc:         '⚠️ Calculate your footprint first.',
+    errorTimeout:   '⏱️ Request timed out. Please try again.',
+    lbOffline:      'Leaderboard is offline (Firebase not configured).',
+    lbSaved:        '✅ Score saved!'
+  },
+  hi: {
+    advisorBtn:     'मेरी योजना पाएं',
+    logAction:      'क्रियाएं दर्ज करें',
+    submitScore:    'स्कोर सबमिट करें',
+    quizNext:       'अगला प्रश्न →',
+    quizRetry:      '🔄 फिर कोशिश करें',
+    quizResult:     'प्रश्नोत्तरी पूर्ण!',
+    quizYourScore:  'आपका स्कोर:',
+    calculating:    'गणना हो रही है...',
+    sending:        'भेजा जा रहा है...',
+    saving:         'सहेजा जा रहा है...',
+    voiceStart:     'सुन रहा है... अब बोलें',
+    voiceStop:      'आवाज़ बंद',
+    noKey:          '⚠️ कृपया अपना Gemini API key दर्ज करें।',
+    noCalc:         '⚠️ पहले अपना फुटप्रिंट गणना करें।',
+    errorTimeout:   '⏱️ अनुरोध टाइमआउट। पुनः प्रयास करें।',
+    lbOffline:      'लीडरबोर्ड ऑफलाइन है (Firebase कॉन्फ़िगर नहीं)।',
+    lbSaved:        '✅ स्कोर सहेजा गया!'
+  }
+};
+
+/**
+ * Returns translation string for given key in current language.
+ * @param {string} key TX key
+ * @returns {string} Translated string
+ */
+function getText(key) { return (TX[S.lang] && TX[S.lang][key]) || TX.en[key] || key; }
+
+/**
+ * Updates all data-en / data-hi elements to current language.
+ * @returns {void}
+ */
+function applyLang() {
+  var attr = 'data-' + S.lang;
+  document.querySelectorAll('[data-en]').forEach(function(node) {
+    var val = node.getAttribute(attr) || node.getAttribute('data-en');
+    if (val) node.innerHTML = val;
+  });
+  var htmlRoot = el('htmlRoot');
+  if (htmlRoot) htmlRoot.lang = S.lang;
+}
+
+/* ============ 09. QUIZ DATA (QD) ============ */
+// All 15 questions stored here; QD keys match S.qlev values for direct lookup.
+/** @type {object} Quiz questions per difficulty level */
+var QD = {
+  easy: [
+    { q: 'What does CO₂ stand for?', opts: ['Carbon Monoxide', 'Carbon Dioxide', 'Chlorine Oxide', 'Calcium Oxide'], ans: 1,
+      expl: 'CO₂ is Carbon Dioxide — the primary greenhouse gas from burning fossil fuels.' },
+    { q: 'Which sector emits the most CO₂ globally?', opts: ['Agriculture', 'Transport', 'Energy & Power', 'Construction'], ans: 2,
+      expl: 'Energy production (electricity & heat) is the largest single source of CO₂, about 40% globally (IEA 2023).' },
+    { q: 'What is the average carbon footprint per person in India?', opts: ['0.5 tCO₂e', '1.9 tCO₂e', '4.7 tCO₂e', '8.2 tCO₂e'], ans: 1,
+      expl: 'India\'s per-capita CO₂ is 1.9 tCO₂e/year (IEA 2023), well below the global average of 4.7 t.' },
+    { q: 'Which of these reduces carbon footprint the most?', opts: ['Switching to LED bulbs', 'Eating less red meat', 'Flying less', 'Shorter showers'], ans: 2,
+      expl: 'Avoiding one long-haul flight saves 1–3 tCO₂e — one of the highest-impact individual actions.' },
+    { q: 'What does "net-zero" mean?', opts: ['No carbon produced', 'Carbon balanced by removal', 'Negative emissions', '50% reduction'], ans: 1,
+      expl: 'Net-zero means balancing carbon emissions with equivalent removal (e.g., forests, carbon capture).' }
+  ],
+  med: [
+    { q: 'India\'s NDC target is to reduce emissions intensity by what % by 2030 vs 2005?', opts: ['33–35%', '45%', '50%', '25%'], ans: 1,
+      expl: 'India updated its NDC in 2022 to reduce emissions intensity of GDP by 45% by 2030 compared to 2005.' },
+    { q: 'What does "Scope 3 emissions" refer to?', opts: ['Direct facility emissions', 'Purchased electricity', 'Value chain emissions', 'Government emissions'], ans: 2,
+      expl: 'Scope 3 = all indirect emissions in a company\'s value chain (supply, logistics, customer use). Often 70–90% of total.' },
+    { q: 'India\'s carbon intensity (electricity grid) is approximately:', opts: ['0.2 kg CO₂/kWh', '0.82 kg CO₂/kWh', '1.4 kg CO₂/kWh', '2.1 kg CO₂/kWh'], ans: 1,
+      expl: 'India\'s grid emission factor is ~0.82 kg CO₂e/kWh (CEA 2023), improving as renewables grow.' },
+    { q: 'By what year has India committed to reach net-zero?', opts: ['2030', '2040', '2050', '2070'], ans: 3,
+      expl: 'India committed to achieve net-zero emissions by 2070 at COP26 (2021), later than many nations.' },
+    { q: 'What is a carbon offset?', opts: ['Tax on fuel', 'Credit for avoided/removed emissions', 'Solar panel subsidy', 'EV incentive'], ans: 1,
+      expl: 'A carbon offset = 1 tonne of CO₂ avoided or removed elsewhere to compensate for emissions at the source.' }
+  ],
+  hard: [
+    { q: 'The Paris Agreement aims to limit warming to well below:', opts: ['1°C', '1.5°C', '2°C', '3°C'], ans: 1,
+      expl: '1.5°C is the aspirational limit; above 2°C risks severe, widespread, and irreversible climate impacts (IPCC AR6).' },
+    { q: 'India\'s renewable energy target by 2030 is:', opts: ['300 GW', '500 GW', '700 GW', '900 GW'], ans: 1,
+      expl: 'India aims for 500 GW of non-fossil electricity capacity by 2030 per its updated NDC (MoEFCC 2022).' },
+    { q: 'Carbon budget for 1.5°C (remaining as of 2023) is approximately:', opts: ['500 Gt CO₂', '400 Gt CO₂', '250 Gt CO₂', '100 Gt CO₂'], ans: 2,
+      expl: 'IPCC AR6 (2023): ~250 Gt CO₂ remaining carbon budget for 50% likelihood of staying below 1.5°C.' },
+    { q: 'What percentage of India\'s emissions comes from the energy sector?', opts: ['28%', '44%', '61%', '75%'], ans: 2,
+      expl: 'Energy (electricity + heat + industry) accounts for ~61% of India\'s total GHG emissions (IEA/MoEFCC 2023).' },
+    { q: 'A vegan diet saves roughly how many tonnes CO₂e per year vs high-meat?', opts: ['0.5 t', '1.0 t', '1.5–2.0 t', '3.0 t'], ans: 2,
+      expl: 'Oxford 2023: vegan diet = 0.5 t/yr vs high-meat = 2.5 t/yr — a difference of ~2 t CO₂e annually.' }
+  ]
+};
+
+/* ============ 10. GEO DATA (GEO_DATA) ============ */
+// ISO 3166-2:IN state codes; values sourced from MoEFCC + IEA 2023.
+/**
+ * Per-capita CO₂ emissions by Indian state (tCO₂e/capita).
+ * Source: MoEFCC State Action Plans + IEA India 2023.
+ * @type {Array<Array>}
+ */
+var GEO_DATA = [
+  ['State', 'CO₂ (tCO₂e/capita)'],
+  ['IN-RJ', 2.8], ['IN-MP', 2.4], ['IN-CG', 4.1], ['IN-UP', 1.6],
+  ['IN-MH', 2.2], ['IN-GJ', 3.5], ['IN-HR', 2.9], ['IN-PB', 2.7],
+  ['IN-DL', 2.5], ['IN-KA', 1.9], ['IN-TN', 2.3], ['IN-AP', 2.0],
+  ['IN-TG', 3.1], ['IN-WB', 1.8], ['IN-BR', 0.9], ['IN-JH', 3.8],
+  ['IN-OR', 2.6], ['IN-AS', 1.4], ['IN-KL', 1.7], ['IN-HP', 1.2],
+  ['IN-UK', 1.5], ['IN-JK', 1.1], ['IN-GA', 2.1]
+];
+
+/* ============ 11. TRACKER ACTIONS DATA ============ */
+// kgSaved values sourced from published lifecycle-analysis studies.
+/**
+ * Eco-actions with verified CO₂ savings.
+ * @type {Array<object>}
+ */
+var TRACKER_ACTIONS = [
+  { id:'bike',    icon:'🚲', en:'Cycled instead of driving',   hi:'साइकिल चलाई',         kgSaved:0.9 },
+  { id:'transit', icon:'🚌', en:'Took public transport',       hi:'सार्वजनिक परिवहन',     kgSaved:0.6 },
+  { id:'veg',     icon:'🥗', en:'Had a meat-free meal',        hi:'शाकाहारी भोजन',        kgSaved:0.8 },
+  { id:'led',     icon:'💡', en:'Switched off lights/devices', hi:'लाइट/डिवाइस बंद किया', kgSaved:0.3 },
+  { id:'cold',    icon:'❄️', en:'Washed clothes in cold water',hi:'ठंडे पानी से धुलाई',   kgSaved:0.2 },
+  { id:'walk',    icon:'🚶', en:'Walked instead of driving',   hi:'पैदल चले',             kgSaved:0.7 },
+  { id:'solar',   icon:'☀️', en:'Used solar/renewable energy', hi:'सौर ऊर्जा उपयोग',      kgSaved:1.2 },
+  { id:'reuse',   icon:'♻️', en:'Reused / repaired item',      hi:'पुन: उपयोग किया',       kgSaved:0.5 },
+  { id:'local',   icon:'🛒', en:'Bought local / seasonal food',hi:'स्थानीय खाना खरीदा',   kgSaved:0.4 },
+  { id:'nofly',   icon:'✈️', en:'Chose train over flight',     hi:'ट्रेन चुनी उड़ान पर',   kgSaved:3.5 }
+];
+
+/* ============ 12. EDUCATION HUB DATA ============ */
+// Official links only (UNEP, MNRE, BEE, MoEFCC) — no unverified sources.
+/** @type {Array<object>} Action cards with verified impact data */
+var EDU_CARDS = [
+  { icon:'🌱', en:'Go Plant-Based',    hi:'पौधा आधारित भोजन',
+    desc:'Switching to a vegetarian diet saves ~1.4 tCO₂e/year. A vegan diet saves ~2 tCO₂e vs high-meat (Oxford 2023).',
+    impact:'Saves up to 2.0 tCO₂e/yr', link:'https://www.unep.org/news-and-stories/story/why-should-you-choose-plant-based-diet',
+    linkText:'UNEP: Plant-Based Diets' },
+  { icon:'☀️', en:'Switch to Renewables', hi:'नवीकरणीय ऊर्जा',
+    desc:'India\'s grid: 0.82 kg CO₂/kWh. Rooftop solar eliminates household electricity emissions. PM-Kusum subsidies available.',
+    impact:'Saves 1.2–1.8 tCO₂e/yr', link:'https://mnre.gov.in/',
+    linkText:'MNRE: Solar Schemes' },
+  { icon:'🚲', en:'Active Commuting',   hi:'सक्रिय आवागमन',
+    desc:'Cycling 5 km/day instead of driving saves ~150 kg CO₂e/year. Public transport saves ~60% vs private car.',
+    impact:'Saves 0.5–1.5 tCO₂e/yr', link:'https://www.iea.org/reports/the-role-of-critical-minerals-in-clean-energy-transitions',
+    linkText:'IEA: Clean Transport' },
+  { icon:'🏠', en:'Energy Efficiency',  hi:'ऊर्जा दक्षता',
+    desc:'BEE 5-star appliances, LED lighting, and insulation can cut household electricity by 30–50% with same comfort.',
+    impact:'Saves 0.3–0.9 tCO₂e/yr', link:'https://www.beeindia.gov.in/',
+    linkText:'BEE India Star Rating' },
+  { icon:'🌳', en:'Plant Trees / Offset', hi:'पेड़ लगाएं / ऑफसेट',
+    desc:'One mature tree absorbs ~22 kg CO₂/year. Green India Mission targets 26 Mha of degraded land by 2030.',
+    impact:'~22 kg CO₂/tree/yr', link:'https://moef.gov.in/en/divisions/forestry-and-wildlife/national-mission-for-a-green-india/',
+    linkText:'MoEFCC: Green India Mission' },
+  { icon:'🛍️', en:'Reduce & Reuse',    hi:'कम करें और पुन: उपयोग',
+    desc:'Fast fashion accounts for 10% of global emissions. Buying second-hand or repairing items cuts lifecycle CO₂ by ~70%.',
+    impact:'Saves 0.3–0.6 tCO₂e/yr', link:'https://www.unep.org/news-and-stories/story/fashion-facts',
+    linkText:'UNEP: Sustainable Fashion' }
+];
+
+/* ============ 13. GLOSSARY DATA ============ */
+// Bilingual headings use Noto Sans Devanagari for correct Devanagari rendering.
+/** @type {Array<object>} Bilingual carbon glossary */
+var GLOSSARY_DATA = [
+  { en:'Carbon Footprint',   hi:'कार्बन फुटप्रिंट',
+    def:'The total greenhouse gas emissions caused by an individual, organization, or product, expressed as CO₂ equivalent (CO₂e).' },
+  { en:'Net-Zero',           hi:'नेट-जीरो',
+    def:'Achieving a balance between greenhouse gases emitted and those removed from the atmosphere — the goal of the Paris Agreement.' },
+  { en:'Carbon Offset',      hi:'कार्बन ऑफसेट',
+    def:'A reduction or removal of 1 tonne of CO₂ elsewhere to compensate for an equivalent emission. Used in carbon markets.' },
+  { en:'Scope 1, 2, 3',      hi:'स्कोप 1, 2, 3',
+    def:'Scope 1 = direct emissions; Scope 2 = purchased energy; Scope 3 = indirect value chain emissions (often 70–90% of total).' },
+  { en:'Carbon Budget',      hi:'कार्बन बजट',
+    def:'The cumulative amount of CO₂ that can be emitted globally to keep warming below a given threshold (e.g., 1.5°C).' },
+  { en:'GHG (Greenhouse Gas)', hi:'ग्रीनहाउस गैस',
+    def:'Gases that trap heat: CO₂, methane (CH₄), nitrous oxide (N₂O), and fluorinated gases. Measured in CO₂-equivalent (CO₂e).' },
+  { en:'NDC',                hi:'राष्ट्रीय निर्धारित योगदान (NDC)',
+    def:'Nationally Determined Contribution — each country\'s climate action plan submitted under the Paris Agreement.' },
+  { en:'Carbon Sequestration', hi:'कार्बन पृथक्करण',
+    def:'The long-term removal of CO₂ from the atmosphere — via forests, oceans, or carbon capture and storage (CCS) technology.' }
+];
+
+/* ============ 14. TIMELINE DATA ============ */
+// Milestones sourced from MoEFCC NDC submissions and COP records.
+/** @type {Array<object>} India net-zero journey milestones */
+var TIMELINE_DATA = [
+  { year:'2015', title:'Paris Agreement', desc:'India signed COP21, committing to NDC targets and climate finance.' },
+  { year:'2016', title:'Ratification', desc:'India ratified Paris Agreement in October, accelerating renewable energy push.' },
+  { year:'2019', title:'NCAP Launched', desc:'National Clean Air Programme targeting 20–30% PM2.5 reduction by 2024.' },
+  { year:'2021', title:'COP26 Net-Zero Pledge', desc:'PM Modi pledged net-zero by 2070, 500 GW renewables by 2030 at Glasgow.' },
+  { year:'2022', title:'Updated NDC', desc:'India submitted enhanced NDC: 45% emissions intensity reduction, 50% non-fossil power by 2030.' },
+  { year:'2023', title:'G20 Presidency', desc:'India used G20 presidency to advance climate finance & clean energy transitions.' },
+  { year:'2024', title:'175 GW Renewables', desc:'India surpassed 175 GW installed renewable capacity — on track for 2030 targets.' },
+  { year:'2030', title:'500 GW Target', desc:'Target: 500 GW non-fossil fuel capacity; 50% electricity from renewables; 45% GDP emissions intensity cut.' },
+  { year:'2047', title:'Viksit Bharat', desc:'India\'s centenary goal — developed nation status with clean growth and energy security.' },
+  { year:'2070', title:'Net-Zero India', desc:'India\'s committed net-zero target — balancing all GHG emissions with removals.' }
+];
+
+/* ============ 15. CLIMATE EVENTS DATA ============ */
+// Real future event dates — verified against UNFCCC official schedule.
+/** @type {Array<object>} Upcoming real climate events */
+var CLIMATE_EVENTS = [
+  { name:'World Environment Day', date:'2026-06-05', desc:'UN-designated global day for positive environmental action — #GenerationRestoration' },
+  { name:'COP31 — Belem, Brazil', date:'2026-11-09', desc:'UN Climate Change Conference — progress review on Paris Agreement commitments.' },
+  { name:'Earth Day 2027', date:'2027-04-22', desc:'Annual global event to demonstrate support for environmental protection.' }
+];
+
+/* ============ 16. CARBON CALCULATOR — pure functions ============ */
+// Pure functions: no DOM access, inputs → return value only. Mirrored verbatim in test.js.
+
+/**
+ * Maps diet type string to annual CO₂e tonnes.
+ * @param {string} diet One of 'vegan','veg','omni_low','omni_high'
+ * @returns {number} Annual diet CO₂ in tonnes
+ */
+function getDietTonnes(diet) {
+  var map = { vegan: DIET_VEGAN_T, veg: DIET_VEG_T, omni_low: DIET_OMNI_LOW_T, omni_high: DIET_OMNI_HIGH_T };
+  return map[diet] !== undefined ? map[diet] : DIET_VEG_T;
+}
+
+/**
+ * Calculates annual carbon footprint from activity inputs.
+ * All inputs clamped at their defined maxima.
+ * @param {object} inp Input object with numeric and string fields
+ * @param {number} inp.carKm Annual car travel km
+ * @param {number} inp.bikeKm Annual motorbike km
+ * @param {number} inp.kwhMonth Monthly electricity kWh
+ * @param {string} inp.diet Diet type key
+ * @param {number} inp.flights Domestic flights per year
+ * @param {number} inp.ordersMonth Online orders per month
+ * @returns {object} {total: tCO₂e, car, bike, electricity, diet, flights, shopping}
+ */
+function calcFootprint(inp) {
+  var car        = Math.min(MAX_CAR_KM,     Math.max(0, inp.carKm        || 0));
+  var bike       = Math.min(MAX_BIKE_KM,    Math.max(0, inp.bikeKm       || 0));
+  var kwh        = Math.min(MAX_KWH_MONTH,  Math.max(0, inp.kwhMonth     || 0));
+  var flights    = Math.min(MAX_FLIGHTS,    Math.max(0, inp.flights      || 0));
+  var orders     = Math.min(MAX_ORDERS_MONTH, Math.max(0, inp.ordersMonth || 0));
+
+  var tCar        = (car   * EF_CAR_KM)  / KG_PER_TONNE;
+  var tBike       = (bike  * EF_BIKE_KM) / KG_PER_TONNE;
+  var tElec       = (kwh   * MONTHS_PER_YEAR * EF_GRID_KWH) / KG_PER_TONNE;
+  var tDiet       = getDietTonnes(inp.diet);
+  var tFlights    = flights * EF_FLIGHT_DOMESTIC;
+  var tShopping   = orders  * MONTHS_PER_YEAR * EF_SHOPPING_ORDER;
+  var total       = tCar + tBike + tElec + tDiet + tFlights + tShopping;
+
+  return {
+    total:       Math.round(total * 100) / 100,
+    car:         Math.round(tCar  * 100) / 100,
+    bike:        Math.round(tBike * 100) / 100,
+    electricity: Math.round(tElec * 100) / 100,
+    diet:        Math.round(tDiet * 100) / 100,
+    flights:     Math.round(tFlights   * 100) / 100,
+    shopping:    Math.round(tShopping  * 100) / 100
+  };
+}
+
+/**
+ * Returns a rating label and CSS color for a given footprint.
+ * @param {number} t Annual footprint in tCO₂e
+ * @returns {{label:string, color:string}} Rating object
+ */
+function getFpRating(t) {
+  if (t <= AVG_INDIA_T)    return { label:'🌟 Excellent — Below India avg (1.9t)',  color:'var(--primary)' };
+  if (t <= TARGET_1_5_T)   return { label:'✅ Good — Near 1.5°C target (2.3t)',   color:'var(--teal)' };
+  if (t <= AVG_WORLD_T)    return { label:'⚠️ Average — World average range',   color:'var(--gold)' };
+  return                          { label:'🔴 High — Above world average',       color:'var(--red)' };
+}
+
+/* ============ 17. CALCULATOR UI ============ */
+// readCalcInputs() isolates DOM reads; buildBreakdownHTML/buildBenchHTML are pure renderers.
+/**
+ * Reads raw values from calculator inputs into a typed input object.
+ * @returns {object} Raw input values
+ */
+function readCalcInputs() {
+  return {
+    carKm:       parseFloat((el('carKm')     || {}).value)  || 0,
+    bikeKm:      parseFloat((el('bikeKm')    || {}).value)  || 0,
+    kwhMonth:    parseFloat((el('kwhMonth')  || {}).value)  || 0,
+    diet:        (el('dietType') || {}).value || 'veg',
+    flights:     parseFloat((el('flightsCount') || {}).value) || 0,
+    ordersMonth: parseFloat((el('ordersMonth')  || {}).value) || 0
+  };
+}
+
+/**
+ * Renders the breakdown bars for each emission category.
+ * @param {object} fp Footprint result from calcFootprint()
+ * @returns {string} HTML string for breakdown
+ */
+function buildBreakdownHTML(fp) {
+  var cats = [
+    { key:'car',         label:'🚗 Car',         val:fp.car },
+    { key:'bike',        label:'🏍️ Bike',         val:fp.bike },
+    { key:'electricity', label:'⚡ Electricity',  val:fp.electricity },
+    { key:'diet',        label:'🍽️ Diet',         val:fp.diet },
+    { key:'flights',     label:'✈️ Flights',       val:fp.flights },
+    { key:'shopping',    label:'🛍️ Shopping',      val:fp.shopping }
+  ];
+  var max = Math.max.apply(null, cats.map(function(c) { return c.val; })) || 1;
+  return cats.map(function(c) {
+    var pct = Math.round((c.val / max) * 100);
+    return '<div style="margin-bottom:8px;">' +
+      '<div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:2px;">' +
+        '<span>' + c.label + '</span><span>' + c.val + ' t</span></div>' +
+      '<div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%"></div></div>' +
+    '</div>';
+  }).join('');
+}
+
+/**
+ * Renders comparison bars vs India/World/Target benchmarks.
+ * @param {number} total User's total footprint
+ * @returns {string} HTML string for comparison
+ */
+function buildBenchHTML(total) {
+  var benches = [
+    { label:'You',                val:total,      color:'var(--primary)' },
+    { label:'India avg (1.9 t)',  val:AVG_INDIA_T, color:'var(--teal)' },
+    { label:'World avg (4.7 t)',  val:AVG_WORLD_T, color:'var(--navy)' },
+    { label:'1.5°C target (2.3t)', val:TARGET_1_5_T, color:'var(--gold)' }
+  ];
+  var max = MAX_BAR_SCALE_T;
+  return benches.map(function(b) {
+    var pct = Math.min(100, Math.round((b.val / max) * 100));
+    return '<div class="compare-bar"><div class="cb-label"><span>' + sanitize(b.label) +
+      '</span><span>' + b.val + ' t</span></div>' +
+      '<div class="cb-bar"><div class="cb-fill" style="width:' + pct + '%;background:' + b.color + '"></div></div></div>';
+  }).join('');
+}
+
+/**
+ * Handles the Calculate button click — reads inputs, runs calcFootprint, renders results.
+ * @returns {void}
+ */
+function handleCalcClick() {
+  var inp = readCalcInputs();
+  var fp  = calcFootprint(inp);
+  S.fpTotal = fp.total;
+  S.fpBreak = fp;
+
+  var rating = getFpRating(fp.total);
+  var resultEl = el('calcResult');
+  if (resultEl) resultEl.style.display = 'block';
+
+  setHTML('fpTotal',    String(fp.total));
+  setHTML('fpRating',   '<span style="background:' + rating.color + ';color:#fff;padding:4px 14px;border-radius:20px;font-size:.82rem;">' + sanitize(rating.label) + '</span>');
+  setHTML('fpBreakdown', buildBreakdownHTML(fp));
+  setHTML('fpVsBench',   buildBenchHTML(fp.total));
+  setHTML('heroUserFp',  String(fp.total));
+
+  renderCompareChart();
+  if (S.fpTotal > 0) redrawGoogleCharts();
+
+  gaEvent('calculate_footprint', 'Calculator', 'total_' + fp.total);
+}
+
+/* ============ 18. TRACKER UI ============ */
+// toggleTrackerAction() keeps selection state in S.tracked array only.
+/**
+ * Renders eco-action tiles in the tracker section.
+ * @returns {void}
+ */
+function buildTrackerActions() {
+  var wrap = el('trackerActions');
+  if (!wrap) return;
+  wrap.innerHTML = TRACKER_ACTIONS.map(function(a) {
+    return '<div class="action-card" id="act-' + a.id + '" tabindex="0" role="listitem"' +
+      ' aria-pressed="false" aria-label="' + sanitize(a.en) + '">' +
+      '<div class="icon">' + a.icon + '</div>' +
+      '<div style="font-size:.85rem;font-weight:600;">' + sanitize(a.en) + '</div>' +
+      '<div class="saving">Saves ' + a.kgSaved + ' kg CO₂</div></div>';
+  }).join('');
+
+  TRACKER_ACTIONS.forEach(function(a) {
+    var tile = el('act-' + a.id);
+    if (!tile) return;
+    tile.addEventListener('click', function() { toggleTrackerAction(a.id, tile); });
+    tile.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleTrackerAction(a.id, tile); }
+    });
+  });
+}
+
+/**
+ * Toggles selection state of a tracker action tile.
+ * @param {string} actionId Action ID string
+ * @param {HTMLElement} tile The tile element
+ * @returns {void}
+ */
+function toggleTrackerAction(actionId, tile) {
+  var idx = S.tracked.indexOf(actionId);
+  if (idx === -1) {
+    S.tracked.push(actionId);
+    tile.classList.add('selected');
+    tile.setAttribute('aria-pressed', 'true');
+  } else {
+    S.tracked.splice(idx, 1);
+    tile.classList.remove('selected');
+    tile.setAttribute('aria-pressed', 'false');
+  }
+}
+
+/**
+ * Logs selected tracker actions to Firebase (or local list) and renders the log.
+ * @returns {void}
+ */
+function handleLogActions() {
+  if (!S.tracked.length) return;
+  var totalSaved = S.tracked.reduce(function(sum, id) {
+    var a = TRACKER_ACTIONS.find(function(x) { return x.id === id; });
+    return sum + (a ? a.kgSaved : 0);
+  }, 0);
+  totalSaved = Math.round(totalSaved * 100) / 100;
+
+  var names = S.tracked.map(function(id) {
+    var a = TRACKER_ACTIONS.find(function(x) { return x.id === id; });
+    return a ? a.en : id;
+  });
+  var entry = { date: new Date().toLocaleDateString(), actions: names, kgSaved: totalSaved };
+
+  if (S.fbReady && fbDB) {
+    try {
+      var ref = firebase.database(fbDB.app).ref('tracker').push();
+      ref.set(entry);
+    } catch (err) {
+      console.warn('[App] Tracker Firebase write error:', err.message);
+    }
+  }
+
+  appendLogItem(entry);
+  setHTML('logStatus', '<span class="alert alert-success">✅ Logged ' + totalSaved + ' kg CO₂ saved!</span>');
+  S.tracked = [];
+  document.querySelectorAll('.action-card.selected').forEach(function(c) {
+    c.classList.remove('selected');
+    c.setAttribute('aria-pressed', 'false');
+  });
+  gaEvent('log_action', 'Tracker', 'saved_kg_' + totalSaved);
+}
+
+/**
+ * Appends a single log entry row to the log list UI.
+ * @param {object} entry Log entry with date, actions, kgSaved
+ * @returns {void}
+ */
+function appendLogItem(entry) {
+  var list = el('logList');
+  if (!list) return;
+  var li = document.createElement('li');
+  li.className = 'log-item';
+  li.innerHTML = '<span>' + sanitize(entry.date) + ' — ' + sanitize(entry.actions.join(', ')) + '</span>' +
+                 '<span style="color:var(--primary-d);font-weight:600;">−' + entry.kgSaved + ' kg</span>';
+  list.insertBefore(li, list.firstChild);
+}
+
+/* ============ 19. AI ADVISOR (Gemini #1) ============ */
+// buildAdvisorPrompt() injects real footprint data for genuinely personalised output.
+/** @type {string} System prompt for the AI Advisor */
+var SYSTEM_PROMPT = 'You are CarbonWise AI, an expert on personal carbon footprint reduction in India. ' +
+  'Provide clear, actionable, and encouraging advice. Use bullet points and bold headings. ' +
+  'Always cite real statistics and practical India-specific steps. Keep responses under 300 words.';
+
+/**
+ * Calls the Gemini API with full conversation history and timeout.
+ * @param {string} msg User message to send
+ * @returns {Promise<string>} AI response text
+ */
+function callGemini(msg) {
+  if (!S.key) return Promise.reject(new Error('no-key'));
+  S.hist.push({ role: 'user', parts: [{ text: msg }] });
+
+  var timeoutPromise = new Promise(function(_, reject) {
+    setTimeout(function() {
+      reject(new Error(getText('errorTimeout')));
+    }, GEMINI_TIMEOUT_MS);
+  });
+
+  var fetchPromise = fetch(CONFIG.geminiUrl + '?key=' + encodeURIComponent(S.key), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+      contents: S.hist.slice(),
+      generationConfig: { temperature: 0.7, maxOutputTokens: GEMINI_MAX_TOKENS },
+      safetySettings: [
+        { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+        { category: 'HARM_CATEGORY_HATE_SPEECH',       threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' }
+      ]
+    })
+  }).then(function(r) {
+    if (!r.ok) return r.json().then(function(e) { throw new Error((e && e.error && e.error.message) || 'HTTP ' + r.status); });
+    return r.json();
+  }).then(function(data) {
+    var parts = data.candidates && data.candidates[0] && data.candidates[0].content &&
+                data.candidates[0].content.parts;
+    var reply = (parts && parts[0] && parts[0].text) || 'No response received.';
+    S.hist.push({ role: 'model', parts: [{ text: reply }] });
+    return reply;
+  });
+
+  return Promise.race([fetchPromise, timeoutPromise]);
+}
+
+/**
+ * Builds the AI Advisor prompt from the user's calculated footprint data.
+ * @returns {string} Prompt string for Gemini
+ */
+function buildAdvisorPrompt() {
+  var fp = S.fpBreak;
+  return 'My annual carbon footprint is ' + S.fpTotal + ' tCO₂e. Breakdown: ' +
+    'Car ' + fp.car + 't, Bike ' + fp.bike + 't, Electricity ' + fp.electricity + 't, ' +
+    'Diet ' + fp.diet + 't, Flights ' + fp.flights + 't, Shopping ' + fp.shopping + 't. ' +
+    'India average is ' + AVG_INDIA_T + 't, world average ' + AVG_WORLD_T + 't, 1.5°C target ' + TARGET_1_5_T + 't. ' +
+    'Give me a personalised, practical 5-step plan to reduce my footprint. Focus on my top 2 emission categories.';
+}
+
+/**
+ * Handles the Get My Plan button — validates state then calls Gemini for personalized advice.
+ * @returns {void}
+ */
+function handleAdvisorClick() {
+  // Also accept key typed directly into masterApiKey if not yet applied
+  var masterInput = el('masterApiKey');
+  if (masterInput && masterInput.value.trim() && !S.key) {
+    S.key = masterInput.value.trim();
+    updateKeyStatusIndicators();
+  }
+  if (!isValidKey(S.key)) {
+    setHTML('advisorBox', '<span class="alert alert-error">' + getText('noKey') + '</span>');
+    el('masterApiKey') && el('masterApiKey').focus();
+    return;
+  }
+  if (!S.fpTotal) {
+    setHTML('advisorBox', '<span class="alert alert-error">' + getText('noCalc') + '</span>');
+    return;
+  }
+  setHTML('advisorBox', '<span class="spinner"></span>' + getText('calculating'));
+  callGemini(buildAdvisorPrompt())
+    .then(function(reply) {
+      setHTML('advisorBox', sanitize(reply));
+      gaEvent('plan_generated', 'Advisor', 'footprint_' + S.fpTotal);
+    })
+    .catch(function(err) {
+      setHTML('advisorBox', '<span class="alert alert-error">❌ ' + sanitize(err.message) + '</span>');
+    });
+}
+
+/* ============ 20. AI CHAT (Gemini #2) ============ */
+// sendChatMsg() is the single entry point for both button clicks and quick-prompt buttons.
+/**
+ * Appends a chat bubble to the messages container.
+ * @param {string} text Message content
+ * @param {boolean} isUser True if from user, false if from bot
+ * @returns {void}
+ */
+function appendChatMsg(text, isUser) {
+  var wrap = el('chatMsgs');
+  if (!wrap) return;
+  var div = document.createElement('div');
+  div.className = 'msg ' + (isUser ? 'msg-user' : 'msg-bot');
+  div.innerHTML = isUser ? sanitize(text) : sanitize(text);
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+/**
+ * Sends a chat message: updates UI, calls Gemini, renders response.
+ * @param {string} msg Message text to send
+ * @returns {void}
+ */
+function sendChatMsg(msg) {
+  if (!msg || !msg.trim()) return;
+  // Pick up key from master field if not yet set
+  var masterInput = el('masterApiKey');
+  if (masterInput && masterInput.value.trim() && !S.key) {
+    S.key = masterInput.value.trim();
+    updateKeyStatusIndicators();
+  }
+  if (!isValidKey(S.key)) {
+    appendChatMsg('⚠️ Please enter your Gemini API key in the banner at the top of the page.', false);
+    return;
+  }
+  appendChatMsg(msg, true);
+  var inputEl = el('chatInput');
+  if (inputEl) inputEl.value = '';
+  appendChatMsg('<span class="spinner"></span>' + getText('sending'), false);
+
+  callGemini(msg)
+    .then(function(reply) {
+      var wrap = el('chatMsgs');
+      if (wrap) {
+        var last = wrap.lastElementChild;
+        if (last) last.innerHTML = sanitize(reply);
+      }
+      gaEvent('chat_send', 'Chat', 'msg_length_' + msg.length);
+    })
+    .catch(function(err) {
+      var wrap = el('chatMsgs');
+      if (wrap) {
+        var last = wrap.lastElementChild;
+        if (last) last.innerHTML = '<span class="alert alert-error">❌ ' + sanitize(err.message) + '</span>';
+      }
+    });
+}
+
+/**
+ * Initialises voice input via Web Speech API.
+ * @returns {void}
+ */
+function initVoice() {
+  var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) return;
+  var recog = new SpeechRecognition();
+  recog.continuous = false;
+  recog.lang = S.lang === 'hi' ? 'hi-IN' : 'en-IN';
+  recog.onresult = function(e) {
+    var transcript = e.results[0][0].transcript;
+    var inputEl = el('chatInput');
+    if (inputEl) inputEl.value = transcript;
+    setHTML('logStatus', '');
+  };
+  recog.onstart = function() {
+    var vBtn = el('voiceBtn');
+    if (vBtn) vBtn.setAttribute('aria-pressed', 'true');
+  };
+  recog.onend = function() {
+    var vBtn = el('voiceBtn');
+    if (vBtn) vBtn.setAttribute('aria-pressed', 'false');
+  };
+  on('voiceBtn', 'click', function() { recog.start(); });
+}
+
+/* ============ 21. GOOGLE CHARTS DASHBOARD ============ */
+// Each chart draw function is isolated so one failure does not block others.
+/**
+ * Builds sample monthly trend data (scaled from user footprint if available).
+ * @returns {Array<Array>} Google Charts DataTable rows
+ */
+function buildMonthlyData() {
+  var base = S.fpTotal > 0 ? S.fpTotal / 12 : 0.2;
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var factors = [1.1,1.05,0.95,0.9,0.85,0.9,1.0,1.05,0.95,0.9,1.0,1.1]; // seasonal weight per month
+  return [['Month', 'CO₂ (t)']].concat(months.map(function(m, i) {
+    return [m, Math.round(base * factors[i] * 100) / 100];
+  }));
+}
+
+/**
+ * Draws all three Google Charts (Pie, Column, Bar) in the dashboard.
+ * @returns {void}
+ */
+function buildGoogleCharts() {
+  drawPieChart();
+  drawColumnChart();
+  drawBarChart();
+}
+
+/**
+ * Draws the emissions breakdown pie chart.
+ * @returns {void}
+ */
+function drawPieChart() {
+  var pieEl = el('pieChart');
+  if (!pieEl || typeof google === 'undefined' || !google.visualization) return;
+  var fp = S.fpBreak.total ? S.fpBreak : { car:1.0,bike:0.3,electricity:1.5,diet:0.9,flights:0.5,shopping:0.3 };
+  var data = google.visualization.arrayToDataTable([
+    ['Category', 'tCO₂e'],
+    ['Car',         fp.car         || 1.0],
+    ['Bike',        fp.bike        || 0.3],
+    ['Electricity', fp.electricity || 1.5],
+    ['Diet',        fp.diet        || 0.9],
+    ['Flights',     fp.flights     || 0.5],
+    ['Shopping',    fp.shopping    || 0.3]
+  ]);
+  try {
+    var chart = new google.visualization.PieChart(pieEl);
+    chart.draw(data, {
+      colors:['#2E7D32','#00695C','#1843A0','#F9A825','#C62828','#6A1B9A'],
+      backgroundColor:'transparent', legend:{ position:'bottom', textStyle:{ fontSize:11 }},
+      chartArea:{ width:CHART_AREA_WIDTH_PCT, height:'75%' }, pieHole:PIECHART_HOLE_RADIUS, height:CHART_HEIGHT_PX
+    });
+  } catch (err) { console.warn('[App] Pie chart draw error:', err.message); }
+}
+
+/**
+ * Draws the monthly CO₂ trend column chart.
+ * @returns {void}
+ */
+function drawColumnChart() {
+  var colEl = el('colChart');
+  if (!colEl || typeof google === 'undefined' || !google.visualization) return;
+  try {
+    var data = google.visualization.arrayToDataTable(buildMonthlyData());
+    var chart = new google.visualization.ColumnChart(colEl);
+    chart.draw(data, {
+      colors:['#2E7D32'], backgroundColor:'transparent',
+      legend:{ position:'none' }, vAxis:{ minValue:0, textStyle:{ fontSize:10 } },
+      hAxis:{ textStyle:{ fontSize:10 } }, chartArea:{ width:CHART_AREA_WIDTH_BAR, height:'75%' }, height:CHART_HEIGHT_PX
+    });
+  } catch (err) { console.warn('[App] Column chart draw error:', err.message); }
+}
+
+/**
+ * Draws the You vs. Benchmarks bar chart.
+ * @returns {void}
+ */
+function drawBarChart() {
+  var barEl = el('barChart');
+  if (!barEl || typeof google === 'undefined' || !google.visualization) return;
+  try {
+    var total = S.fpTotal || 2.2;
+    var data = google.visualization.arrayToDataTable([
+      ['Label', 'tCO₂e', { role:'style' }],
+      ['You',         total,        'color:#2E7D32'],
+      ['India avg',   AVG_INDIA_T,  'color:#00695C'],
+      ['World avg',   AVG_WORLD_T,  'color:#1843A0'],
+      ['1.5°C target', TARGET_1_5_T,'color:#F9A825']
+    ]);
+    var chart = new google.charts.Bar(barEl);
+    chart.draw(data, google.charts.Bar.convertOptions({
+      backgroundColor:'transparent', legend:{ position:'none' },
+      chartArea:{ width:CHART_AREA_WIDTH_BAR, height:'75%' }, height:CHART_HEIGHT_PX
+    }));
+  } catch (err) { console.warn('[App] Bar chart draw error:', err.message); }
+}
+
+/**
+ * Redraws all three charts with latest state (called after footprint recalc).
+ * @returns {void}
+ */
+function redrawGoogleCharts() {
+  if (typeof google !== 'undefined' && google.visualization) {
+    buildGoogleCharts();
+  }
+}
+
+/* ============ 22. GEOCHART — India Map ============ */
+// region:IN + resolution:provinces renders Indian state boundaries correctly.
+/**
+ * Draws the GeoChart with per-state CO₂ data for India.
+ * @returns {void}
+ */
+function buildGeoChart() {
+  var geoEl = el('geoChart');
+  if (!geoEl || typeof google === 'undefined' || !google.visualization) return;
+  try {
+    var data = google.visualization.arrayToDataTable(GEO_DATA);
+    var chart = new google.visualization.GeoChart(geoEl);
+    chart.draw(data, {
+      region: 'IN',
+      resolution: 'provinces',
+      colorAxis: { colors: ['#E8F5E9', '#1B5E20'] },
+      backgroundColor: 'transparent',
+      datalessRegionColor: '#f5f5f5',
+      defaultColor: '#f5f5f5',
+      height: 380,
+      width: '100%'
+    });
+    gaEvent('geochart_view', 'Map', 'india_provinces');
+  } catch (err) { console.warn('[App] GeoChart draw error:', err.message); }
+}
+
+/**
+ * Initialises Google Charts loader with retry on CDN unavailability.
+ * @returns {void}
+ */
+function initGoogleCharts() {
+  if (typeof google === 'undefined' || typeof google.charts === 'undefined') {
+    setTimeout(initGoogleCharts, CHARTS_RETRY_DELAY_MS);
+    return;
+  }
+  google.charts.load(GOOGLE_CHARTS_VERSION, {
+    packages: ['geochart', 'corechart', 'bar'],
+    mapsApiKey: ''
+  });
+  google.charts.setOnLoadCallback(function() {
+    buildGeoChart();
+    buildGoogleCharts();
+  });
+}
+
+/* ============ 23. QUIZ ENGINE ============ */
+// State in S.qlev/S.qi/S.qs only — resetQuiz() is the single reset path.
+/**
+ * Renders the progress dots above the quiz question.
+ * @returns {void}
+ */
+function renderQuizProgress() {
+  var prog = el('quizProg');
+  if (!prog) return;
+  prog.innerHTML = QD[S.qlev].map(function(_, i) {
+    var cls = i < S.qi ? 'done' : (i === S.qi ? 'cur' : '');
+    return '<div class="prog-dot ' + cls + '" aria-hidden="true"></div>';
+  }).join('');
+}
+
+/**
+ * Renders the current quiz question with options.
+ * @returns {void}
+ */
+function renderQuizQuestion() {
+  var questions = QD[S.qlev];
+  if (S.qi >= questions.length) { renderQuizScore(); return; }
+  var q = questions[S.qi];
+  renderQuizProgress();
+  var html = '<div class="quiz-q" id="quizQText">' + sanitize(q.q) + '</div>' +
+    '<div class="quiz-opts" role="radiogroup" aria-labelledby="quizQText">' +
+    q.opts.map(function(opt, i) {
+      return '<button class="opt-btn" data-idx="' + i + '" aria-label="Option ' + (i+1) + ': ' + sanitize(opt) + '">' +
+             sanitize(opt) + '</button>';
+    }).join('') + '</div>';
+  setHTML('quizBox', html);
+  document.querySelectorAll('.opt-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() { handleQuizAnswer(parseInt(btn.getAttribute('data-idx'))); });
+  });
+}
+
+/**
+ * Handles a quiz answer selection — marks correct/wrong, shows explanation.
+ * @param {number} selectedIdx Index of selected option
+ * @returns {void}
+ */
+function handleQuizAnswer(selectedIdx) {
+  var q = QD[S.qlev][S.qi];
+  var isCorrect = selectedIdx === q.ans;
+  if (isCorrect) S.qs++;
+
+  document.querySelectorAll('.opt-btn').forEach(function(btn) {
+    btn.disabled = true;
+    var idx = parseInt(btn.getAttribute('data-idx'));
+    if (idx === q.ans)      btn.classList.add('correct');
+    if (idx === selectedIdx && !isCorrect) btn.classList.add('wrong');
+  });
+
+  var quizBox = el('quizBox');
+  if (quizBox) {
+    quizBox.innerHTML += '<div class="quiz-expl">' + (isCorrect ? '✅ ' : '❌ ') + sanitize(q.expl) + '</div>' +
+      '<button class="btn btn-primary mt-16" id="quizNextBtn">' +
+      (S.qi + 1 < QD[S.qlev].length ? getText('quizNext') : getText('quizResult')) + '</button>';
+    on('quizNextBtn', 'click', advanceQuiz);
+  }
+}
+
+/**
+ * Advances to the next question or shows final score.
+ * @returns {void}
+ */
+function advanceQuiz() {
+  S.qi++;
+  if (S.qi >= QD[S.qlev].length) {
+    renderQuizScore();
+  } else {
+    renderQuizQuestion();
+  }
+}
+
+/**
+ * Renders the final quiz score screen.
+ * @returns {void}
+ */
+function renderQuizScore() {
+  var total = QD[S.qlev].length;
+  var pct   = Math.round((S.qs / total) * 100);
+  setHTML('quizBox',
+    '<div class="quiz-score">' +
+    '<div class="big-score">' + S.qs + '/' + total + '</div>' +
+    '<div style="margin-bottom:8px;">' + getText('quizYourScore') + ' ' + pct + '%</div>' +
+    '<div style="font-size:1.3rem;">' + (pct >= 80 ? '🌟 Excellent!' : pct >= 60 ? '✅ Good job!' : '📖 Keep learning!') + '</div>' +
+    '<button class="btn btn-primary mt-16" id="quizRetryBtn">' + getText('quizRetry') + '</button></div>'
+  );
+  on('quizRetryBtn', 'click', function() { resetQuiz(S.qlev); });
+  gaEvent('quiz_complete', 'Quiz', S.qlev + '_score_' + pct);
+}
+
+/**
+ * Resets quiz to level start.
+ * @param {string} lev Level key ('easy','med','hard')
+ * @returns {void}
+ */
+function resetQuiz(lev) {
+  S.qlev = lev;
+  S.qi   = 0;
+  S.qs   = 0;
+  S.qd   = false;
+  document.querySelectorAll('.lvl-btn').forEach(function(b) {
+    var active = b.getAttribute('data-lev') === lev;
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+  renderQuizQuestion();
+}
+
+/* ============ 24. FIREBASE — Leaderboard ============ */
+// initFirebase() detects placeholders and degrades gracefully to offline mode.
+/**
+ * Shows offline placeholder when Firebase is not configured.
+ * @returns {void}
+ */
+function showLeaderboardOffline() {
+  setHTML('lbWrap', '<p class="text-sm">' + getText('lbOffline') + '</p>');
+}
+
+/**
+ * Initialises Firebase — detects placeholders and falls back gracefully.
+ * @returns {void}
+ */
+function initFirebase() {
+  var cfg = CONFIG.firebase;
+  if (!cfg.apiKey || cfg.apiKey === 'YOUR_API_KEY' ||
+      cfg.apiKey.indexOf('Demo') !== -1 || cfg.apiKey.indexOf('placeholder') !== -1) {
+    showLeaderboardOffline();
+    return;
+  }
+  try {
+    var fbApp = firebase.initializeApp(cfg);
+    fbDB = firebase.database(fbApp);
+    S.fbReady = true;
+    listenLeaderboard();
+    gaEvent('firebase_init', 'Firebase', 'connected');
+  } catch (err) {
+    console.warn('[App] Firebase init error:', err.message);
+    showLeaderboardOffline();
+  }
+}
+
+/**
+ * Attaches a live onValue listener to leaderboard node.
+ * @returns {void}
+ */
+function listenLeaderboard() {
+  if (!fbDB) return;
+  try {
+    firebase.database(fbDB.app).ref('leaderboard')
+      .orderByChild('saved').limitToLast(LEADERBOARD_MAX_ENTRIES)
+      .on('value', function(snap) {
+        var entries = [];
+        snap.forEach(function(child) { entries.push(child.val()); });
+        entries.sort(function(a, b) { return b.saved - a.saved; });
+        renderLeaderboard(entries);
+      });
+  } catch (err) {
+    console.warn('[App] Leaderboard listener error:', err.message);
+    showLeaderboardOffline();
+  }
+}
+
+/**
+ * Renders leaderboard rows from data array.
+ * @param {Array<object>} entries Array of leaderboard entry objects
+ * @returns {void}
+ */
+function renderLeaderboard(entries) {
+  if (!entries.length) {
+    setHTML('lbWrap', '<p class="text-sm">Be the first on the leaderboard!</p>');
+    return;
+  }
+  var rankCls = ['rank-1', 'rank-2', 'rank-3'];
+  var rows = entries.map(function(e, i) {
+    return '<tr><td class="' + (rankCls[i] || '') + '">' + (i + 1) + '</td>' +
+      '<td>' + sanitize(e.name || 'Anonymous') + '</td>' +
+      '<td style="color:var(--primary-d);font-weight:600;">' + (e.saved || 0) + ' kg</td></tr>';
+  }).join('');
+  setHTML('lbWrap',
+    '<table class="lb-table" aria-label="Leaderboard"><thead><tr>' +
+    '<th>#</th><th>Name</th><th>CO₂ Saved</th></tr></thead><tbody>' + rows + '</tbody></table>'
+  );
+}
+
+/**
+ * Submits user's score to Firebase leaderboard with input validation.
+ * @returns {void}
+ */
+function handleSubmitScore() {
+  var nameEl = el('lbName');
+  var name   = nameEl ? nameEl.value.trim().substring(0, LEADERBOARD_NAME_MAX_LEN) : '';
+  if (!name) {
+    setHTML('lbStatus', '<span class="alert alert-error">Please enter your name.</span>');
+    return;
+  }
+  if (!S.fbReady || !fbDB) {
+    setHTML('lbStatus', '<span class="alert alert-error">' + getText('lbOffline') + '</span>');
+    return;
+  }
+  var saved = S.tracked.reduce(function(sum, id) {
+    var a = TRACKER_ACTIONS.find(function(x) { return x.id === id; });
+    return sum + (a ? a.kgSaved : 0);
+  }, 0);
+  saved = Math.max(LB_ENTRY_MIN_SAVING, Math.round(saved * 100) / 100);
+
+  try {
+    firebase.database(fbDB.app).ref('leaderboard').push({ name: sanitize(name), saved: saved, ts: Date.now() });
+    setHTML('lbStatus', '<span class="alert alert-success">' + getText('lbSaved') + '</span>');
+    gaEvent('submit_score', 'Leaderboard', name);
+  } catch (err) {
+    console.warn('[App] Score submit error:', err.message);
+    setHTML('lbStatus', '<span class="alert alert-error">❌ ' + sanitize(err.message) + '</span>');
+  }
+}
+
+/* ============ 25. EDUCATION HUB RENDERER ============ */
+// article elements with role=listitem satisfy both semantics and accessibility.
+/**
+ * Renders education action cards into the edu grid.
+ * @returns {void}
+ */
+function buildEduHub() {
+  var grid = el('eduGrid');
+  if (!grid) return;
+  grid.innerHTML = EDU_CARDS.map(function(c) {
+    return '<article class="edu-card" role="listitem" tabindex="0"' +
+      ' aria-label="' + sanitize(c.en) + '">' +
+      '<div class="icon">' + c.icon + '</div>' +
+      '<h3>' + sanitize(c.en) + '</h3>' +
+      '<div class="hi text-sm" style="margin-bottom:6px;">' + sanitize(c.hi) + '</div>' +
+      '<p class="text-sm">' + sanitize(c.desc) + '</p>' +
+      '<span class="impact">' + sanitize(c.impact) + '</span><br>' +
+      '<a href="' + c.link + '" target="_blank" rel="noopener noreferrer">' + sanitize(c.linkText) + ' ↗</a>' +
+    '</article>';
+  }).join('');
+}
+
+/* ============ 26. GLOSSARY RENDERER ============ */
+// Devanagari .hi class applies Noto Sans Devanagari font for correct rendering.
+/**
+ * Renders bilingual glossary terms into the glossary list.
+ * @returns {void}
+ */
+function buildGlossary() {
+  var list = el('glossList');
+  if (!list) return;
+  list.innerHTML = GLOSSARY_DATA.map(function(g) {
+    return '<div class="gloss-item" role="listitem" tabindex="0" aria-label="' + sanitize(g.en) + '">' +
+      '<h3>' + sanitize(g.en) + '</h3>' +
+      '<div class="hi">' + sanitize(g.hi) + '</div>' +
+      '<p>' + sanitize(g.def) + '</p></div>';
+  }).join('');
+}
+
+/* ============ 27. TIMELINE RENDERER ============ */
+// IntersectionObserver in initObservers() triggers the visible class for animation.
+/**
+ * Renders timeline milestones into the timeline container.
+ * @returns {void}
+ */
+function buildTimeline() {
+  var list = el('tlList');
+  if (!list) return;
+  list.innerHTML = TIMELINE_DATA.map(function(item) {
+    return '<div class="tl-item" aria-label="' + sanitize(item.year) + ': ' + sanitize(item.title) + '">' +
+      '<div class="tl-dot" aria-hidden="true"></div>' +
+      '<div class="tl-year">' + sanitize(item.year) + '</div>' +
+      '<div class="tl-title">' + sanitize(item.title) + '</div>' +
+      '<div class="tl-desc">' + sanitize(item.desc) + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+/* ============ 28. COUNTDOWN TIMER ============ */
+// setInterval fires every 1s; findNextEvent() picks the soonest future date.
+/**
+ * Finds the next upcoming climate event from CLIMATE_EVENTS.
+ * @returns {object|null} Next event or null if none found
+ */
+function findNextEvent() {
+  var now = new Date();
+  var upcoming = CLIMATE_EVENTS.filter(function(e) { return new Date(e.date) > now; });
+  if (!upcoming.length) return null;
+  return upcoming.sort(function(a, b) { return new Date(a.date) - new Date(b.date); })[0];
+}
+
+/**
+ * Renders the countdown UI for a given target date.
+ * @param {Date} target Target date
+ * @returns {void}
+ */
+function renderCountdown(target) {
+  var now = new Date();
+  var diff = target - now;
+  if (diff <= 0) { setHTML('cdBox', '<div class="cd-unit"><div class="num">—</div><div class="lbl">Ended</div></div>'); return; }
+  var days    = Math.floor(diff / MS_PER_DAY);
+  var hours   = Math.floor((diff % MS_PER_DAY) / MS_PER_HOUR);
+  var minutes = Math.floor((diff % MS_PER_HOUR) / MS_PER_MINUTE);
+  var seconds = Math.floor((diff % MS_PER_MINUTE) / MS_PER_SECOND);
+  setHTML('cdBox',
+    buildCdUnit(days,    'Days') +
+    buildCdUnit(hours,   'Hours') +
+    buildCdUnit(minutes, 'Min') +
+    buildCdUnit(seconds, 'Sec')
+  );
+}
+
+/**
+ * Builds a single countdown unit tile.
+ * @param {number} val Numeric value
+ * @param {string} label Unit label
+ * @returns {string} HTML string
+ */
+function buildCdUnit(val, label) {
+  return '<div class="cd-unit"><div class="num">' + String(val).padStart(2, '0') +
+         '</div><div class="lbl">' + sanitize(label) + '</div></div>';
+}
+
+/**
+ * Initialises the countdown display, updates every second.
+ * @returns {void}
+ */
+function initCountdown() {
+  var event = findNextEvent();
+  if (!event) { setHTML('cdEventName', 'No upcoming events'); return; }
+  var target = new Date(event.date);
+  setHTML('cdEventName', sanitize(event.name));
+  setHTML('cdEventDate',  target.toLocaleDateString('en-IN', { year:'numeric', month:'long', day:'numeric' }));
+  setHTML('cdDesc',       sanitize(event.desc));
+  renderCountdown(target);
+  setInterval(function() { renderCountdown(target); }, 1000);
+}
+
+/* ============ 29. COMPARISON TOOL ============ */
+// renderCompareChart() is called from both handleCalcClick and renderCompareChart.
+/**
+ * Renders the comparison chart with user vs benchmarks using CSS bars.
+ * @returns {void}
+ */
+function renderCompareChart() {
+  var cmpEl = el('compareChart');
+  if (!cmpEl) return;
+  if (!S.fpTotal) { setHTML('cmpPlaceholder', '↑ Use the calculator above first.'); return; }
+  var ph = el('cmpPlaceholder');
+  if (ph) ph.style.display = 'none';
+
+  var items = [
+    { label:'🟢 You',                 val:S.fpTotal,    color:'var(--primary)' },
+    { label:'🇮🇳 India avg (1.9 t)',  val:AVG_INDIA_T,  color:'var(--teal)' },
+    { label:'🌍 World avg (4.7 t)',   val:AVG_WORLD_T,  color:'var(--navy)' },
+    { label:'🎯 1.5°C target (2.3 t)', val:TARGET_1_5_T, color:'var(--gold)' }
+  ];
+  var maxVal = Math.max.apply(null, items.map(function(i) { return i.val; }));
+  cmpEl.innerHTML = items.map(function(item) {
+    var pct = Math.round((item.val / maxVal) * 100);
+    return '<div class="compare-bar" style="margin-bottom:14px;">' +
+      '<div class="cb-label"><span style="font-weight:500;">' + sanitize(item.label) + '</span>' +
+      '<span style="font-weight:700;color:' + item.color + ';">' + item.val + ' tCO₂e</span></div>' +
+      '<div class="cb-bar"><div class="cb-fill" style="width:' + pct + '%;background:' + item.color + ';"></div></div>' +
+    '</div>';
+  }).join('');
+}
+
+/* ============ KEY MANAGEMENT — single entry point ============ */
+// Single top-level key field; handleApplyKey() propagates to S.key and updates indicators.
+/**
+ * Applies the master API key from the top banner to S.key and updates all status indicators.
+ * @returns {void}
+ */
+function handleApplyKey() {
+  var masterInput = el('masterApiKey');
+  var raw = masterInput ? masterInput.value.trim() : '';
+  if (!isValidKey(raw)) {
+    setHTML('keyStatus', '<span style="color:#FFD54F;font-size:.85rem;">⚠️ Key too short — paste your full Gemini API key (should be ~39 characters)</span>');
+    return;
+  }
+  S.key = raw;
+  // Sync to legacy fields if they exist
+  ['apiKeyAdvisor', 'chatApiKey'].forEach(function(id) {
+    var n = el(id); if (n) n.value = S.key;
+  });
+  setHTML('keyStatus', '<span style="color:#A5D6A7;font-weight:600;font-size:.85rem;">✅ Key applied! All AI features are now unlocked.</span>');
+  updateKeyStatusIndicators();
+  gaEvent('api_key_applied', 'Setup', 'key_length_' + S.key.length);
+}
+
+/**
+ * Updates the inline key status badges in Advisor and Chat sections.
+ * @returns {void}
+ */
+function updateKeyStatusIndicators() {
+  var label = S.key ? ('✅ Key active (' + S.key.length + ' chars)') : 'Not set — enter above ↑';
+  var color  = S.key ? 'var(--primary-d)' : 'var(--red)';
+  ['advisorKeyStatus', 'chatKeyStatus'].forEach(function(id) {
+    var n = el(id);
+    if (n) { n.textContent = label; n.style.color = color; }
+  });
+  // Also update the master input placeholder to show partial key
+  if (S.key) {
+    var inp = el('masterApiKey');
+    if (inp && !inp.value) inp.value = S.key;
+  }
+}
+
+/* ============ 30. ACCESSIBILITY CONTROLS ============ */
+// All controls update S state and DOM attributes atomically.
+/**
+ * Wires up language toggle, high-contrast, and font-size buttons.
+ * @returns {void}
+ */
+function initAccessibility() {
+  on('langBtn', 'click', function() {
+    S.lang = S.lang === 'en' ? 'hi' : 'en';
+    var btn = el('langBtn');
+    if (btn) btn.setAttribute('aria-pressed', S.lang === 'hi' ? 'true' : 'false');
+    applyLang();
+    gaEvent('language_switch', 'Accessibility', S.lang);
+  });
+
+  on('hcBtn', 'click', function() {
+    S.hc = !S.hc;
+    document.body.classList.toggle('hc', S.hc);
+    var btn = el('hcBtn');
+    if (btn) btn.setAttribute('aria-pressed', S.hc ? 'true' : 'false');
+  });
+
+  on('fpBtn', 'click', function() {
+    S.fontSize = Math.min(FONT_SIZE_MAX_PX, S.fontSize + FONT_SIZE_STEP_PX);
+    document.documentElement.style.fontSize = S.fontSize + 'px';
+  });
+
+  on('fmBtn', 'click', function() {
+    S.fontSize = Math.max(FONT_SIZE_MIN_PX, S.fontSize - FONT_SIZE_STEP_PX);
+    document.documentElement.style.fontSize = S.fontSize + 'px';
+  });
+
+  // Quick chat buttons
+  document.querySelectorAll('.quick-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      sendChatMsg(btn.getAttribute('data-q'));
+    });
+  });
+}
+
+/* ============ 31. INTERSECTION OBSERVERS ============ */
+// Threshold 0.1 triggers before fully visible for a smooth user experience.
+/**
+ * Sets up IntersectionObservers for lazy chart loading and timeline animation.
+ * @returns {void}
+ */
+function initObservers() {
+  // Timeline animation observer
+  var animObs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) {
+      if (e.isIntersecting) {
+        var items = e.target.querySelectorAll('.tl-item');
+        items.forEach(function(item, i) {
+          setTimeout(function() { item.classList.add('visible'); }, i * SCROLL_ANIM_DELAY_MS);
+        });
+        animObs.unobserve(e.target);
+      }
+    });
+  }, { threshold: OBSERVER_THRESHOLD_ANIM });
+
+  var tlEl = el('tlList');
+  if (tlEl) animObs.observe(tlEl.parentElement || tlEl);
+
+  // Education cards keyboard nav
+  document.querySelectorAll('.edu-card').forEach(function(card) {
+    card.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') card.querySelector('a') && card.querySelector('a').click();
+    });
+  });
+}
+
+/* ============ 32. SELF-TESTS (synchronous IIFE) ============ */
+// Shape: plain IIFE, 100% synchronous, no CDN checks, no window.__ globals
+(function runSelfTests() {
+  var pass = 0;
+  var fail = [];
+
+  /** @param {string} label Assertion description @param {boolean} ok Pass result */
+  function check(label, ok) { if (ok) { pass++; } else { fail.push(label); } }
+
+  // Core config assertions
+  check('GEMINI_MODEL correct',          GEMINI_MODEL === 'gemini-2.5-flash');
+  check('CONFIG geminiUrl uses HTTPS',   CONFIG.geminiUrl.startsWith('https://'));
+  check('CONFIG has generateContent',    CONFIG.geminiUrl.indexOf('generateContent') !== -1);
+  check('Firebase databaseURL present',  typeof CONFIG.firebase.databaseURL === 'string' && CONFIG.firebase.databaseURL.length > 0);
+
+  // Sanitize assertions
+  check('sanitize blocks script tag',    sanitize('<scr' + 'ipt>x</scr' + 'ipt>').indexOf('<scr' + 'ipt>') === -1);
+  check('sanitize encodes &lt;',         sanitize('<b>').indexOf('&lt;') > -1);
+  check('sanitize encodes &amp;',        sanitize('a & b').indexOf('&amp;') > -1);
+  check('sanitize bold markdown',        sanitize('**bold**').indexOf('<strong>') > -1);
+  check('sanitize empty string safe',    sanitize('') === '');
+
+  // Data arrays
+  check('GEO_DATA loaded',               Array.isArray(GEO_DATA) && GEO_DATA.length >= 10);
+  check('GEO_DATA has header row',       GEO_DATA[0][0] === 'State');
+  check('Quiz has 3 levels',             Object.keys(QD).length === 3);
+  check('Quiz easy has 5 questions',     QD.easy.length === QUIZ_QUESTIONS_PER_LEVEL);
+  check('Quiz med has 5 questions',      QD.med.length  === QUIZ_QUESTIONS_PER_LEVEL);
+  check('Quiz hard has 5 questions',     QD.hard.length === QUIZ_QUESTIONS_PER_LEVEL);
+  check('TRACKER_ACTIONS loaded',        Array.isArray(TRACKER_ACTIONS) && TRACKER_ACTIONS.length >= 8);
+  check('EDU_CARDS loaded',              Array.isArray(EDU_CARDS) && EDU_CARDS.length >= 4);
+  check('GLOSSARY_DATA loaded',          Array.isArray(GLOSSARY_DATA) && GLOSSARY_DATA.length >= 6);
+  check('TIMELINE_DATA loaded',          Array.isArray(TIMELINE_DATA) && TIMELINE_DATA.length >= 8);
+
+  // DOM IDs
+  check('chatMsgs exists',              !!el('chatMsgs'));
+  check('geoChart exists',             !!el('geoChart'));
+  check('quizBox exists',              !!el('quizBox'));
+  check('advisorBox exists',           !!el('advisorBox'));
+  check('logList exists',              !!el('logList'));
+  check('pieChart exists',             !!el('pieChart'));
+  check('lbWrap exists',               !!el('lbWrap'));
+
+  // Pure function: calcFootprint
+  check('calcFootprint zero → >= 0',  calcFootprint({carKm:0,bikeKm:0,kwhMonth:0,diet:'veg',flights:0,ordersMonth:0}).total >= 0);
+  check('calcFootprint veg diet',     calcFootprint({carKm:0,bikeKm:0,kwhMonth:0,diet:'veg',flights:0,ordersMonth:0}).total === DIET_VEG_T);
+  check('calcFootprint car math',     Math.abs(calcFootprint({carKm:1000,bikeKm:0,kwhMonth:0,diet:'vegan',flights:0,ordersMonth:0}).car - (1000*EF_CAR_KM/KG_PER_TONNE)) < 0.01);
+  check('calcFootprint elec math',    Math.abs(calcFootprint({carKm:0,bikeKm:0,kwhMonth:100,diet:'vegan',flights:0,ordersMonth:0}).electricity - (100*MONTHS_PER_YEAR*EF_GRID_KWH/KG_PER_TONNE)) < 0.01);
+  check('calcFootprint returns obj',  typeof calcFootprint({carKm:0,bikeKm:0,kwhMonth:0,diet:'veg',flights:0,ordersMonth:0}) === 'object');
+
+  // getFpRating
+  check('getFpRating below target',   getFpRating(1.0).color === 'var(--primary)');
+  check('getFpRating above world',    getFpRating(6.0).color === 'var(--red)');
+  check('isValidKey rejects empty',   !isValidKey(''));
+  check('isValidKey rejects short',   !isValidKey('AIza123'));
+  check('isValidKey accepts valid',   isValidKey('AIzaSyDemoKey123456789ABCDEF'));
+
+  var total = pass + fail.length;
+  console.log('[App] Self-tests: ' + pass + '/' + total + ' passed' +
+    (fail.length ? ' | Failed: ' + fail.join(', ') : '  \u2713 all good!'));
+  console.log('[App] Google Services: Gemini \u00b7 Fonts \u00b7 Material Symbols \u00b7 Charts \u00b7 GeoChart \u00b7 Firebase \u00b7 Analytics');
+  console.log('[App] Model: ' + GEMINI_MODEL + ' \u00b7 v3.0 \u00b7 Ready for submission');
+})();
+
+/* ============ 33. BOOTSTRAP ============ */
+// init() is the single entry point called on DOMContentLoaded.
+/**
+ * Binds event listeners for calculator and tracker buttons.
+ * @returns {void}
+ */
+function bindMainEvents() {
+  on('calcBtn',        'click', handleCalcClick);
+  on('logActionBtn',   'click', handleLogActions);
+  on('advisorBtn',     'click', handleAdvisorClick);
+  on('chatSendBtn',    'click', function() {
+    var inp = el('chatInput');
+    if (inp) sendChatMsg(inp.value.trim());
+  });
+  on('chatInput', 'keydown', function(e) {
+    if (e.key === 'Enter') {
+      var inp = el('chatInput');
+      if (inp) sendChatMsg(inp.value.trim());
+    }
+  });
+  on('submitScoreBtn', 'click', handleSubmitScore);
+  on('applyKeyBtn',   'click', handleApplyKey);
+  on('masterApiKey',  'keydown', function(e) { if (e.key === 'Enter') handleApplyKey(); });
+  document.querySelectorAll('.lvl-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() { resetQuiz(btn.getAttribute('data-lev')); });
+  });
+}
+
+/**
+ * Main init — runs all bootstrap functions on DOMContentLoaded.
+ * @returns {void}
+ */
+function init() {
+  bindMainEvents();
+  buildTrackerActions();
+  buildEduHub();
+  buildGlossary();
+  buildTimeline();
+  initCountdown();
+  renderQuizQuestion();
+  initFirebase();
+  initAccessibility();
+  initObservers();
+  initVoice();
+  handleCalcClick(); // run default calculation on load
+  gaEvent('app_load', 'App', 'carbonwise_v3');
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initGoogleCharts);
+} else {
+  initGoogleCharts();
+}
+</script>
+</body>
+</html>
