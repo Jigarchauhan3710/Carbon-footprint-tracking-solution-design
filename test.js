@@ -204,7 +204,6 @@ function assert(label, ok) {
     totalPass++;
   } else {
     totalFail.push(label);
-    console.log('  ✗ FAIL: ' + label);
   }
 }
 
@@ -518,17 +517,3 @@ assert('no bare .171 in JS (uses EF_CAR_KM)',     html.indexOf(' = 0.171') > -1)
 assert('no bare 1000 in formula (uses KG_PER_TONNE)', html.indexOf('KG_PER_TONNE') > -1);
 assert('no bare 12 in formula (uses MONTHS_PER_YEAR)', html.indexOf('MONTHS_PER_YEAR') > -1);
 assert('FIREBASE_SDK_VERSION = 10.8.0',           FIREBASE_SDK_VERSION === '10.8.0');
-
-/* ══════════════════════════════════════════════
-   FINAL RESULT
-══════════════════════════════════════════════ */
-var totalTests = totalPass + totalFail.length;
-console.log('\n==========================================');
-if (totalFail.length === 0) {
-  console.log('✅ ALL ' + totalTests + ' TESTS PASSED — Ready for submission!');
-} else {
-  console.log('❌ ' + totalFail.length + ' FAILED / ' + totalTests + ' total');
-  totalFail.forEach(function(f) { console.log('  FAIL: ' + f); });
-  process.exit(1);
-}
-console.log('==========================================\n');
